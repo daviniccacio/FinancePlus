@@ -11,6 +11,7 @@ import FilterCenter from './components/FilterCenter';
 import TransactionTable from './components/TransactionTable';
 import TransactionModal from './components/TransactionModal';
 import DeleteModal from './components/DeleteModal';
+import AuthRecovery from './components/AuthRecovery';
 
 // NOVOS COMPONENTES DA NAVEGAÇÃO INTERNA
 import Sidebar from './components/Sidebar';
@@ -27,8 +28,9 @@ export default function App() {
   const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  // NOVO ESTADO: Controla se exibe Login (true) ou Cadastro (false)
-  const [isLoginView, setIsLoginView] = useState(true);
+  // 🔄 SISTEMA DE NAVEGAÇÃO DE AUTENTICAÇÃO ATUALIZADO
+  // Aceita os valores: 'login' | 'cadastro' | 'solicitar' | 'definir'
+  const [viewAuth, setViewAuth] = useState('login');
 
   // ESTADO DE NAVEGAÇÃO INTERNA
   const [abaAtiva, setAbaAtiva] = useState('dashboard');
@@ -91,9 +93,19 @@ export default function App() {
     }
   }
 
+  // OUVINTE DE ESTADO DE AUTENTICAÇÃO ROBUSTO
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      
+      // Intercepta se o usuário clicou no link de redefinição enviado por e-mail
+      if (event === 'PASSWORD_RECOVERY') {
+        setViewAuth('definir');
+      }
+    });
+    
     return () => subscription.unsubscribe();
   }, []);
 
@@ -116,16 +128,54 @@ export default function App() {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
 
-      // Se o Supabase estiver configurado para exigir confirmação de e-mail:
       if (data?.user && data?.user?.identities?.length === 0) {
         toast.error('Este e-mail já está cadastrado.');
         return;
       }
 
       toast.success('Cadastro realizado! Verifique seu e-mail de confirmação.');
-      setIsLoginView(true); // Retorna para a tela de login após cadastrar
+      setViewAuth('login'); // Retorna para a visão de login
     } catch (error) {
       toast.error(`Erro ao cadastrar: ${error.message}`);
+    }
+  }
+
+  // LÓGICA SUPABASE: Enviar link de redefinição para o e-mail informado
+  async function lidarComSolicitacaoEmail({ email: emailRecuperacao }, setCarregando) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailRecuperacao, {
+        redirectTo: window.location.origin, // Retorna para a raiz da aplicação (local ou prod)
+      });
+      if (error) throw error;
+
+      toast.success('Link de recuperação enviado! Verifique sua caixa de entrada.');
+      setViewAuth('login');
+    } catch (error) {
+      toast.error(error.message || 'Erro ao enviar e-mail de recuperação.');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  // LÓGICA SUPABASE: Gravar a nova senha na nuvem
+  async function lidarComNovaSenha({ novaSenha, confirmarSenha }, setCarregando) {
+    if (novaSenha !== confirmarSenha) {
+      toast.error('As senhas não coincidem!');
+      setCarregando(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: novaSenha });
+      if (error) throw error;
+
+      toast.success('Sua senha foi redefinida! Faça login novamente.');
+      await supabase.auth.signOut(); // Limpa as sessões temporárias
+      setViewAuth('login');
+    } catch (error) {
+      toast.error(error.message || 'Erro ao redefinir sua senha.');
+    } finally {
+      setCarregando(false);
     }
   }
 
@@ -315,7 +365,40 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
+  // --- RENDERIZAÇÃO DO FLUXO EXTERNO (NÃO AUTENTICADO) ---
   if (!session) {
+    // Intercepta e renderiza a tela se estiver pedindo a redefinição por e-mail
+    if (viewAuth === 'solicitar') {
+      return (
+        <>
+          <Toaster position="bottom-right" />
+          <AuthRecovery 
+            modo="solicitar" 
+            aoVoltar={() => setViewAuth('login')} 
+            aoSubmeter={lidarComSolicitacaoEmail} 
+          />
+        </>
+      );
+    }
+
+    // Intercepta e renderiza a tela se o usuário clicou no link do e-mail
+    if (viewAuth === 'definir') {
+      return (
+        <>
+          <Toaster position="bottom-right" />
+          <AuthRecovery 
+            modo="definir" 
+            aoVoltar={async () => {
+              await supabase.auth.signOut();
+              setViewAuth('login');
+            }} 
+            aoSubmeter={lidarComNovaSenha} 
+          />
+        </>
+      );
+    }
+
+    // Estrutura Base de Login e Cadastro Mantida Integramente
     return (
       <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-200">
         <Toaster position="bottom-right" />
@@ -359,18 +442,16 @@ export default function App() {
                 <h1 className="text-sm font-bold text-gray-900 dark:text-zinc-100">Gestor Financeiro</h1>
               </div>
 
-              {/* TÍTULO E SUBTÍTULO ALTERNAM DINAMICAMENTE */}
               <div className="space-y-1">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">
-                  {isLoginView ? 'Acesse sua conta' : 'Crie sua conta'}
+                  {viewAuth === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
                 </h3>
                 <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">
-                  {isLoginView ? 'Insira suas credenciais para gerenciar a aplicação.' : 'Preencha os campos abaixo para começar de graça.'}
+                  {viewAuth === 'login' ? 'Insira suas credenciais para gerenciar a aplicação.' : 'Preencha os campos abaixo para começar de graça.'}
                 </p>
               </div>
 
-              {/* O ONSUBMIT TAMBÉM ALTERNA ENTRE AS FUNÇÕES */}
-              <form onSubmit={isLoginView ? lidarComLogin : lidarComCadastro} className="space-y-4">
+              <form onSubmit={viewAuth === 'login' ? lidarComLogin : lidarComCadastro} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">E-mail de acesso</label>
                   <input
@@ -402,28 +483,44 @@ export default function App() {
                       {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  
+                  {/* ✨ NOVO LINK: DISPARADOR DO ESQUECI A SENHA */}
+                  {viewAuth === 'login' && (
+                    <div className="text-right pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewAuth('solicitar');
+                          setEmail('');
+                          setPassword('');
+                        }}
+                        className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-bold transition-all cursor-pointer bg-transparent border-none"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <button
                   type="submit"
                   className="w-full bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-blue-600 transition-all shadow-sm shadow-blue-500/10 active:scale-[0.98] mt-2 cursor-pointer"
                 >
-                  {isLoginView ? 'Entrar no Sistema' : 'Criar minha Conta'}
+                  {viewAuth === 'login' ? 'Entrar no Sistema' : 'Criar minha Conta'}
                 </button>
               </form>
 
-              {/* BOTÃO DO RODAPÉ PARA ALTERNAR O ESTADO */}
               <div className="text-center pt-2">
                 <button
                   type="button"
                   onClick={() => {
-                    setIsLoginView(!isLoginView);
+                    setViewAuth(viewAuth === 'login' ? 'cadastro' : 'login');
                     setEmail('');
                     setPassword('');
                   }}
                   className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors bg-transparent border-none cursor-pointer"
                 >
-                  {isLoginView ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Voltar ao Login'}
+                  {viewAuth === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Voltar ao Login'}
                 </button>
               </div>
 
@@ -435,11 +532,11 @@ export default function App() {
     );
   }
 
+  // --- RENDEREZAR ÁREA INTERNA (AUTENTICADO) ---
   return (
     <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
       <Toaster position="bottom-right" />
 
-      {/* SIDEBAR ESQUERDA NATIVA COM CONTROLE DE TEMA PASSA POR PROP */}
       <Sidebar 
         abaAtiva={abaAtiva} 
         setAbaAtiva={setAbaAtiva} 
@@ -448,10 +545,8 @@ export default function App() {
         setDark={setDark} 
       />
 
-      {/* ÁREA DE CONTEÚDO PRINCIPAL (DIREITA) */}
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
 
-        {/* 1. TOPO DINÂMICO */}
         <div className="flex justify-between items-center min-h-12">
           <div>
             {abaAtiva === 'dashboard' && (
@@ -479,14 +574,12 @@ export default function App() {
           )}
         </div>
 
-        {/* 2. O FILTRO VOLTOU A SER O BARRA DE COMPETÊNCIA ANTERIOR */}
         <CompetenceBar 
           filtroCompetencia={filtroCompetencia} 
           setFiltroCompetencia={setFiltroCompetencia} 
           setPaginaAtual={setPaginaAtual} 
         />
 
-        {/* 3. RENDERIZAÇÃO DAS VISÕES/CONTEÚDOS */}
         {abaAtiva === 'dashboard' && (
           <DashboardView
             totalEntradas={totalEntradas}
@@ -523,7 +616,6 @@ export default function App() {
         )}
       </main>
 
-      {/* MODAIS CONTROLADOS CORRETAMENTE */}
       {isModalAberto && (
         <TransactionModal
           editandoId={editandoId}

@@ -1,4 +1,5 @@
-import { LayoutDashboard, ReceiptText, LogOut, Wallet, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, ReceiptText, LogOut, Sun, Moon } from 'lucide-react';
+import minhaLogo from "../assets/icon-financeplus.png"
 
 export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, setDark }) {
   const menus = [
@@ -7,15 +8,19 @@ export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, s
   ];
 
   return (
-    <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-gray-200/80 dark:border-zinc-800 h-screen sticky top-0 flex flex-col justify-between p-5 select-none hidden md:flex transition-colors duration-200">
+    <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-gray-200/80 dark:border-zinc-800 h-screen sticky top-0 flex-col justify-between p-5 select-none hidden md:flex transition-colors duration-200">
       <div>
         <div className="flex items-center gap-2.5 px-2 mb-8">
-          <div className="p-2 bg-blue-500 rounded-xl text-white shadow-xs">
-            <Wallet className="w-5 h-5" />
+          <div className="p-1 bg-transparent rounded-lg flex items-center justify-center overflow-hidden">
+            <img 
+              src={minhaLogo} 
+              alt="Logo Gestor Financeiro" 
+              className="w-12 h-12 object-contain rounded-2xl" 
+            />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-900 dark:text-zinc-100 leading-none">Gestor Financeiro</h1>
-            <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-medium">Controle Interno</span>
+            <h1 className="text-sm font-bold text-gray-900 dark:text-zinc-100 leading-none">FinancePlus</h1>
+            <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-medium">Sistema de gestão financeira</span>
           </div>
         </div>
 

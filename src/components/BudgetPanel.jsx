@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
 import { Target, AlertCircle, CheckCircle2, Pencil, Check, X, Plus, Trash2, Loader2 } from 'lucide-react';
@@ -32,83 +32,52 @@ export default function BudgetPanel({ transacoes = [] }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Buscar as metas salvas no Supabase (Envolvido em useCallback para evitar renderizações infinitas)
-  const buscarMetas = useCallback(async () => {
-    if (!userId) return;
-    try {
-      setCarregandoMetas(true);
-      const { data, error } = await supabase
-        .from('metas')
-        .select('categoria, limite')
-        .eq('user_id', userId);
+  // 2. Sincronizar e buscar as metas unificadas do Supabase com os valores padrão
+  useEffect(() => {
+    const carregarDadosDasMetas = async () => {
+      if (!userId) return;
+      try {
+        setCarregandoMetas(true);
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const objetoMetas = {};
-        data.forEach(item => {
-          objetoMetas[item.categoria] = Number(item.limite);
-        });
-        setLimites(objetoMetas);
-      } else {
-        // Fallback amigável de sugestões se o banco estiver vazio
-        setLimites({
+        // Definição da nossa base fixa de valores padrão do sistema
+        const valoresPadrao = {
           'Moradia': 2500,
           'Educação': 1000,
           'Transporte': 500,
           'Lazer': 400,
           'Contas': 2000,
           'Despesas': 1500
-        });
+        };
+
+        const { data, error } = await supabase
+          .from('metas')
+          .select('categoria, limite')
+          .eq('user_id', userId);
+
+        if (error) throw error;
+
+        // Criamos uma cópia contendo todos os orçamentos padrão primeiro
+        const objetoMetas = { ...valoresPadrao };
+
+        // Se existirem metas customizadas ou editadas na nuvem, elas entram por cima
+        if (data && data.length > 0) {
+          data.forEach(item => {
+            objetoMetas[item.categoria] = Number(item.limite);
+          });
+        }
+
+        // Atualiza o estado com a combinação perfeita dos dois mundos
+        setLimites(objetoMetas);
+      } catch (error) {
+        console.error('Erro ao buscar metas:', error);
+        toast.error('Erro ao carregar metas da nuvem.');
+      } finally {
+        setCarregandoMetas(false);
       }
-    } catch (error) {
-      console.error('Erro ao buscar metas:', error);
-      toast.error('Erro ao carregar metas da nuvem.');
-    } finally {
-      setCarregandoMetas(false);
-    }
+    };
+
+    carregarDadosDasMetas();
   }, [userId]);
-
-// 2. Buscar as metas salvas no Supabase
-useEffect(() => {
-  // Criamos uma função assíncrona interna para isolar os efeitos colaterais
-  const carregarDadosDasMetas = async () => {
-    if (!userId) return;
-    try {
-      setCarregandoMetas(true);
-      const { data, error } = await supabase
-        .from('metas')
-        .select('categoria, limite')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const objetoMetas = {};
-        data.forEach(item => {
-          objetoMetas[item.categoria] = Number(item.limite);
-        });
-        setLimites(objetoMetas);
-      } else {
-        setLimites({
-          'Moradia': 2500,
-          'Educação': 1000,
-          'Transporte': 500,
-          'Lazer': 400,
-          'Contas': 2000,
-          'Despesas': 1500
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao buscar metas:', error);
-      toast.error('Erro ao carregar metas da nuvem.');
-    } finally {
-      setCarregandoMetas(false);
-    }
-  };
-
-  carregarDadosDasMetas();
-}, [userId]);
 
   // 3. Salvar/Atualizar uma meta no Supabase (Upsert)
   const salvarLimite = async (categoria) => {
@@ -192,7 +161,7 @@ useEffect(() => {
     }
   };
 
-  // Processamento local de gastos
+  // Processamento local de gastos baseado nas transações recebidas
   const despesas = transacoes.filter(t => t.tipo === 'Saída' || t.tipo?.toLowerCase() === 'saída');
   const gastosPorCategoria = despesas.reduce((acc, atual) => {
     const cat = atual.categoria || 'Outros';
