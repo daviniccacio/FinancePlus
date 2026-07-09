@@ -2,7 +2,7 @@ import { PlusCircle, FileText, FolderOpen, Tag, CreditCard, AlertTriangle, Penci
 
 // ADICIONADO: Recebimento da prop "carregando" no componente
 export default function TransactionTable({ carregando, transacoesPaginadas, totalPaginas, paginaAtual, setPaginaAtual, setIsModalAberto, exportarPDF, prepararEdicao, setIdExclusaoConfirmar }) {
-  
+
   // Formatação de data padrão BRL segura (Evita bugs de fuso horário)
   function formatarDataBRL(dataString) {
     if (!dataString) return '-';
@@ -14,9 +14,9 @@ export default function TransactionTable({ carregando, transacoesPaginadas, tota
   function verificarStatusVencimento(dataVenc, statusAtual) {
     if (!dataVenc || statusAtual === 'Pago') return null;
     const hoje = new Date();
-    hoje.setHours(0,0,0,0);
+    hoje.setHours(0, 0, 0, 0);
     const vencimento = new Date(dataVenc + 'T00:00:00');
-    vencimento.setHours(0,0,0,0);
+    vencimento.setHours(0, 0, 0, 0);
 
     const diferencaTempo = vencimento.getTime() - hoje.getTime();
     const diferencaDias = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
@@ -148,8 +148,22 @@ export default function TransactionTable({ carregando, transacoesPaginadas, tota
             <div className="p-3 bg-neutral-50 border-t border-gray-100 flex items-center justify-between text-neutral-500 text-xs">
               <span>Página <b>{paginaAtual}</b> de {totalPaginas}</span>
               <div className="flex items-center gap-1">
-                <button type="button" disabled={paginaAtual === 1} onClick={() => setPaginaAtual(p => p - 1)} className="p-1 border border-gray-200 bg-white rounded-lg disabled:opacity-40 hover:bg-neutral-50"><ChevronLeft className="w-3.5 h-3.5" /></button>
-                <button type="button" disabled={paginaAtual === totalPaginas} onClick={() => setPaginaAtual(p => p + 1)} className="p-1 border border-gray-200 bg-white rounded-lg disabled:opacity-40 hover:bg-neutral-50"><ChevronRight className="w-3.5 h-3.5" /></button>
+                <button
+                  type="button"
+                  disabled={paginaAtual === 1}
+                  onClick={(e) => { e.stopPropagation(); setPaginaAtual(p => p - 1); }}
+                  className="p-1 border border-gray-200 bg-white rounded-lg disabled:opacity-40 hover:bg-neutral-50"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={paginaAtual === totalPaginas}
+                  onClick={(e) => { e.stopPropagation(); setPaginaAtual(p => p + 1); }}
+                  className="p-1 border border-gray-200 bg-white rounded-lg disabled:opacity-40 hover:bg-neutral-50"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           )}

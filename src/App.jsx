@@ -3,15 +3,18 @@ import { supabase } from './supabaseClient';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast, { Toaster } from 'react-hot-toast';
-import { Wallet, Eye, EyeOff } from 'lucide-react';
+import { Wallet, Eye, EyeOff, Plus } from 'lucide-react';
 
 // IMPORTAÇÃO DOS COMPONENTES REFATORADOS
 import CompetenceBar from './components/CompetenceBar';
-import SummaryCards from './components/SummaryCards';
 import FilterCenter from './components/FilterCenter';
 import TransactionTable from './components/TransactionTable';
 import TransactionModal from './components/TransactionModal';
 import DeleteModal from './components/DeleteModal';
+
+// NOVOS COMPONENTES DA NAVEGAÇÃO INTERNA
+import Sidebar from './components/Sidebar';
+import DashboardView from './components/DashboardView';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -24,12 +27,16 @@ export default function App() {
   const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
+  // ESTADO DE NAVEGAÇÃO INTERNA
+  const [abaAtiva, setAbaAtiva] = useState('dashboard');
+
   const [buscaTexto, setBuscaTexto] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 10;
 
+  // FILTRO DE COMPETÊNCIA VOLTOU AO PADRÃO (MÊS/ANO) AS ANTES
   const [filtroCompetencia, setFiltroCompetencia] = useState(() => {
     const hoje = new Date();
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
@@ -43,17 +50,6 @@ export default function App() {
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
   const [dataVencimento, setDataVencimento] = useState('');
   const [dadosPagamento, setDadosPagamento] = useState('');
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => { 
-    if (session) buscarTransacoes(); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
 
   async function buscarTransacoes() {
     try {
@@ -72,6 +68,17 @@ export default function App() {
       setCarregando(false);
     }
   }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (session) buscarTransacoes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   async function lidarComLogin(e) {
     e.preventDefault();
@@ -107,7 +114,7 @@ export default function App() {
     if (error) {
       toast.error(`Erro ao salvar: ${error.message}`);
     } else {
-      toast.success(editandoId ? 'Lançamento updated!' : 'Lançamento cadastrado!');
+      toast.success(editandoId ? 'Lançamento atualizado!' : 'Lançamento cadastrado!');
       limparFormulario();
       buscarTransacoes();
     }
@@ -172,11 +179,11 @@ export default function App() {
       format: 'a4'
     });
 
-    const azulInstitucional = [37, 99, 235]; 
-    const cinzaTexto = [100, 116, 139];     
-    const fundoCard = [248, 250, 252];       
+    const azulInstitucional = [37, 99, 235];
+    const cinzaTexto = [100, 116, 139];
+    const fundoCard = [248, 250, 252];
 
-    const competenciaFormatada = filtroCompetencia ? filtroCompetencia.split('-').reverse().join('/') : 'Geral';
+    const competenceFormatada = filtroCompetencia ? filtroCompetencia.split('-').reverse().join('/') : 'Geral';
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
@@ -186,7 +193,7 @@ export default function App() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.textColor = cinzaTexto[0], cinzaTexto[1], cinzaTexto[2];
-    doc.text(`Relatório de Movimentação Mensal - Período: ${competenciaFormatada}`, 14, 26);
+    doc.text(`Relatório de Movimentação Mensal - Período: ${competenceFormatada}`, 14, 26);
     doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 150, 26);
 
     doc.setDrawColor(226, 232, 240);
@@ -198,16 +205,16 @@ export default function App() {
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.textColor = 148, 163, 184; 
+    doc.textColor = 148, 163, 184;
     doc.text("TOTAL ENTRADAS", 22, 41);
     doc.text("TOTAL SAÍDAS", 82, 41);
     doc.text("SALDO DO PERÍODO", 142, 41);
 
     doc.setFontSize(12);
-    doc.textColor = 22, 163, 74; 
+    doc.textColor = 22, 163, 74;
     doc.text(`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 22, 50);
 
-    doc.textColor = 220, 38, 38; 
+    doc.textColor = 220, 38, 38;
     doc.text(`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 82, 50);
 
     if (saldoAtual >= 0) {
@@ -218,13 +225,13 @@ export default function App() {
     doc.text(`R$ ${saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 142, 50);
 
     const colunasTabela = ["Data Lanc.", "Vencimento", "Descrição", "Categoria", "Valor", "Status"];
-    
+
     const canalLinhas = transacoesFiltradas.map(t => [
       new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR'),
       t.data_vencimento ? new Date(t.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-',
-      t.descricao, 
-      t.categoria, 
-      `${t.tipo === 'Entrada' ? '+ ' : '- '}R$ ${t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
+      t.descricao,
+      t.categoria,
+      `${t.tipo === 'Entrada' ? '+ ' : '- '}R$ ${t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       t.status
     ]);
 
@@ -274,10 +281,10 @@ export default function App() {
         <div className="bg-white w-full max-w-4xl rounded-3xl shadow-sm border border-gray-200/60 overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-130">
 
           <div className="hidden md:flex flex-col justify-between p-10 bg-linear-to-br from-blue-600 to-indigo-800 text-white relative overflow-hidden">
-            
+
             <div className="absolute inset-0 opacity-5 pointer-events-none">
               <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 150 Q 200 220, 400 110 T 800 200" fill="none" stroke="currentColor" strokeWidth="2"/>
+                <path d="M0 150 Q 200 220, 400 110 T 800 200" fill="none" stroke="currentColor" strokeWidth="2" />
               </svg>
             </div>
 
@@ -367,29 +374,118 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] pb-8">
+    <div className="min-h-screen bg-[#f2f2f7] flex items-start">
       <Toaster position="bottom-right" />
-      <header className="bg-white/80 backdrop-blur-md border-b border-b-gray-200 sticky top-0 z-40 py-3">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-blue-500" /><h1 className="text-sm font-bold">Gestor Financeiro</h1></div>
-          <button onClick={lidarComLogout} className="flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-semibold px-2.5 py-1.5 rounded-xl">Sair</button>
+
+      {/* SIDEBAR ESQUERDA NATIVA */}
+      <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={lidarComLogout} />
+
+      {/* ÁREA DE CONTEÚDO PRINCIPAL (DIREITA) */}
+      <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+
+        {/* 1. TOPO DINÂMICO */}
+        <div className="flex justify-between items-center min-h-12">
+          <div>
+            {abaAtiva === 'dashboard' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Painel de Controle</h2>
+                <p className="text-xs text-gray-400 font-medium">Análise visual e estatística consolidada do período selecionado.</p>
+              </>
+            )}
+            {abaAtiva === 'lancamentos' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Lançamentos</h2>
+                <p className="text-xs text-gray-400 font-medium">Histórico detalhado e gerenciamento de receitas e despesas.</p>
+              </>
+            )}
+          </div>
+
+          {abaAtiva === 'lancamentos' && (
+            <button
+              onClick={() => setIsModalAberto(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Lançamento
+            </button>
+          )}
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-4 space-y-4">
-        <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} setPaginaAtual={setPaginaAtual} />
-        <SummaryCards totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} />
-        <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
-        <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
+        {/* 2. O FILTRO VOLTOU A SER O BARRA DE COMPETÊNCIA ANTERIOR */}
+        <CompetenceBar 
+          filtroCompetencia={filtroCompetencia} 
+          setFiltroCompetencia={setFiltroCompetencia} 
+          setPaginaAtual={setPaginaAtual} 
+        />
 
-        {isModalAberto && (
-          <TransactionModal editandoId={editandoId} limparFormulario={limparFormulario} salvarLancamento={salvarLancamento} data={data} setData={setData} dataVencimento={dataVencimento} setDataVencimento={setDataVencimento} descricao={descricao} setDescricao={setDescricao} dadosPagamento={dadosPagamento} setDadosPagamento={setDadosPagamento} valorMascara={valorMascara} setValorMascara={setValorMascara} category={categoria} setCategoria={setCategoria} tipo={tipo} setTipo={setTipo} status={status} setStatus={setStatus} />
+        {/* 3. RENDERIZAÇÃO DAS VISÕES/CONTEÚDOS */}
+        {abaAtiva === 'dashboard' && (
+          <DashboardView
+            totalEntradas={totalEntradas}
+            totalSaidas={totalSaidas}
+            saldoAtual={saldoAtual}
+            transacoesFiltradas={transacoesFiltradas}
+          />
         )}
 
-        {idExclusaoConfirmar && (
-          <DeleteModal setIdExclusaoConfirmar={setIdExclusaoConfirmar} ejecutarExclusao={ejecutarExclusao} />
+        {abaAtiva === 'lancamentos' && (
+          <>
+            <FilterCenter
+              buscaTexto={buscaTexto}
+              setBuscaTexto={setBuscaTexto}
+              filtroCategoria={filtroCategoria}
+              setFiltroCategoria={setFiltroCategoria}
+              filtroStatus={filtroStatus}
+              setFiltroStatus={setFiltroStatus}
+              categoriasUnicas={categoriasUnicas}
+              setPaginaAtual={setPaginaAtual}
+            />
+            <TransactionTable
+              carregando={carregando}
+              transacoesPaginadas={transacoesPaginadas}
+              totalPaginas={totalPaginas}
+              paginaAtual={paginaAtual}
+              setPaginaAtual={setPaginaAtual}
+              setIsModalAberto={setIsModalAberto}
+              exportarPDF={exportarPDF}
+              prepararEdicao={prepararEdicao}
+              setIdExclusaoConfirmar={setIdExclusaoConfirmar}
+            />
+          </>
         )}
       </main>
+
+      {/* MODAIS CONTROLADOS CORRETAMENTE */}
+      {isModalAberto && (
+        <TransactionModal
+          editandoId={editandoId}
+          limparFormulario={limparFormulario}
+          salvarLancamento={salvarLancamento}
+          data={data}
+          setData={setData}
+          dataVencimento={dataVencimento}
+          setDataVencimento={setDataVencimento}
+          descricao={descricao}
+          setDescricao={setDescricao}
+          dadosPagamento={dadosPagamento}
+          setDadosPagamento={setDadosPagamento}
+          valorMascara={valorMascara}
+          setValorMascara={setValorMascara}
+          category={categoria}
+          setCategoria={setCategoria}
+          tipo={tipo}
+          setTipo={setTipo}
+          status={status}
+          setStatus={setStatus}
+        />
+      )}
+
+      {idExclusaoConfirmar && (
+        <DeleteModal
+          setIdExclusaoConfirmar={setIdExclusaoConfirmar}
+          ejecutarExclusao={ejecutarExclusao}
+        />
+      )}
     </div>
   );
 }
