@@ -1,4 +1,4 @@
-import { useState } from 'react'; // Apenas o useState, React removido por estar sem uso
+import { useState } from 'react';
 
 const CATEGORIAS_PADRAO = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer'];
 
@@ -23,22 +23,14 @@ export default function TransactionModal({
   status,
   setStatus
 }) {
-  // CORRIGIDO AQUI: Inicializa calculando direto se a categoria atual é customizada ou não
   const [modoTexto, setModoTexto] = useState(() => {
     return category && !CATEGORIAS_PADRAO.includes(category);
   });
-  // DOCUMENTAÇÃO: Função responsável por aplicar a máscara de moeda (Ex: 23.250,30)
+
   const formatarMoeda = (valor) => {
-    // Remove absolutamente tudo o que não for número/dígito
     let apenasDigitos = valor.replace(/\D/g, "");
-    
-    // Se o campo estiver vazio, retorna vazio para não travar com "0,00"
     if (!apenasDigitos) return "";
-    
-    // Transforma a string de números em um valor decimal com centavos (Ex: "250" vira "2.50")
     let valorComDecimais = (Number(apenasDigitos) / 100).toFixed(2);
-    
-    // Formata o número usando a API nativa do JavaScript para o padrão pt-BR
     return new Intl.NumberFormat("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -46,10 +38,10 @@ export default function TransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-150">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-150 dark:border-zinc-800 text-gray-950 dark:text-zinc-50 transition-colors duration-200">
         
-        <h2 className="text-xl font-bold mb-5 text-gray-950">
+        <h2 className="text-xl font-bold mb-5 text-gray-950 dark:text-zinc-100">
           {editandoId ? '📝 Editar Lançamento' : '✨ Nova Transação'}
         </h2>
 
@@ -57,26 +49,21 @@ export default function TransactionModal({
           
           {/* Campo: Descrição */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Descrição
             </label>
             <input
               type="text"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               required
             />
           </div>
 
-          {/* 
-            DOCUMENTAÇÃO DA ALTERAÇÃO (CAMPO VALOR COM MÁSCARA):
-            - type="text" permite que manipulemos os pontos e vírgulas da máscara livremente.
-            - inputMode="numeric" garante que os celulares abram apenas o teclado de números.
-            - onChange aplica a função de máscara a cada tecla digitada pelo usuário.
-          */}
+          {/* Campo: Valor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Valor (R$)
             </label>
             <input
@@ -84,12 +71,11 @@ export default function TransactionModal({
               inputMode="numeric"
               value={valorMascara}
               onChange={(e) => {
-                // Aplica a máscara e atualiza o estado que vai para o App.jsx
                 const valorFormatado = formatarMoeda(e.target.value);
                 setValorMascara(valorFormatado);
               }}
               placeholder="0,00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-500"
               required
             />
           </div>
@@ -97,7 +83,7 @@ export default function TransactionModal({
           {/* Campo: Categoria */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
                 Categoria
               </label>
               <button
@@ -106,7 +92,7 @@ export default function TransactionModal({
                   setModoTexto(!modoTexto);
                   setCategoria(""); 
                 }}
-                className="text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
                 {modoTexto ? "📋 Ver Lista" : "➕ Nova Categoria"}
               </button>
@@ -118,7 +104,7 @@ export default function TransactionModal({
                 value={category}
                 onChange={(e) => setCategoria(e.target.value)}
                 placeholder="Nome da nova categoria"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 required
                 autoFocus
               />
@@ -126,7 +112,7 @@ export default function TransactionModal({
               <select
                 value={category}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
                 required
               >
                 <option value="">Selecione uma categoria</option>
@@ -142,26 +128,26 @@ export default function TransactionModal({
           {/* Linha Dupla: Datas */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Data do Lançamento
               </label>
               <input
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 cursor-pointer"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Data de Vencimento
               </label>
               <input
                 type="date"
                 value={dataVencimento}
                 onChange={(e) => setDataVencimento(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 cursor-pointer"
               />
             </div>
           </div>
@@ -169,13 +155,13 @@ export default function TransactionModal({
           {/* Linha Dupla: Tipo e Status */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Tipo
               </label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 cursor-pointer"
                 required
               >
                 <option value="Entrada">📈 Entrada</option>
@@ -183,13 +169,13 @@ export default function TransactionModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Status
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 cursor-pointer"
                 required
               >
                 <option value="Pago">✅ Pago / Recebido</option>
@@ -200,7 +186,7 @@ export default function TransactionModal({
 
           {/* Campo: Dados de Pagamento */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Dados de Pagamento (Opcional)
             </label>
             <input
@@ -208,16 +194,16 @@ export default function TransactionModal({
               value={dadosPagamento}
               onChange={(e) => setDadosPagamento(e.target.value)}
               placeholder="Chave Pix, Conta, Banco..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-950"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-950 dark:text-zinc-100 placeholder:text-gray-500"
             />
           </div>
 
           {/* Botões de Ação */}
-          <div className="flex justify-end space-x-2 pt-4 border-t border-gray-100">
+          <div className="flex justify-end space-x-2 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button
               type="button"
               onClick={limparFormulario}
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-150 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-zinc-400 hover:bg-gray-150 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
             >
               Cancelar
             </button>

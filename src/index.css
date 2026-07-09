@@ -1,1 +1,10 @@
+/* 1. Importação padrão do Tailwind CSS v4 */
 @import "tailwindcss";
+
+/* 2. ATIVAÇÃO DO DARK MODE POR CLASSE (A linha mágica que falta!) */
+@variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   DICA EXTRA: Garante que o teu body ou html não têm cores fixas abaixo.
+   Se tiveres algo como "body { bg-slate-900 }" sem o prefixo dark:, remove.
+   ========================================================================== */

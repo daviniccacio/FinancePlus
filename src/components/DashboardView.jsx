@@ -3,13 +3,11 @@ import SummaryCards from './SummaryCards';
 
 export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, transacoesFiltradas }) {
   
-  // 1. Dados para o Gráfico de Barras: Entradas vs Saídas
   const dadosFluxo = [
     { name: 'Entradas', valor: totalEntradas, fill: '#16a34a' },
     { name: 'Saídas', valor: totalSaidas, fill: '#dc2626' }
   ];
 
-  // 2. Dados para o Gráfico de Pizza: Agrupamento de Saídas por Categoria
   const despesasPorCategoria = transacoesFiltradas
     .filter(t => t.tipo === 'Saída')
     .reduce((acc, atual) => {
@@ -35,16 +33,17 @@ export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Gráfico 1: Fluxo de Caixa */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-200/60 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Fluxo de Caixa Geral</h3>
-          <div className="h-60 w-full text-[10px] font-semibold text-gray-400">
+        <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-gray-200/60 dark:border-zinc-800 shadow-xs flex flex-col justify-between transition-colors duration-200">
+          <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">Fluxo de Caixa Geral</h3>
+          
+          {/* Injetado seletores utilitários v4 para customizar os Tooltips injetados nativamente pelo Recharts */}
+          <div className="h-60 w-full text-[10px] font-semibold text-gray-400 dark:text-zinc-500 [&_.recharts-default-tooltip]:!bg-white [&_.recharts-default-tooltip]:dark:!bg-zinc-800 [&_.recharts-default-tooltip]:!border-gray-200 [&_.recharts-default-tooltip]:dark:!border-zinc-700 [&_.recharts-default-tooltip_*]:!text-gray-900 [&_.recharts-default-tooltip_*]:dark:!text-zinc-100">
             <ResponsiveContainer width="100%" height="100%">
-              {/* CORRIGIDO AQUI: de dadosGears para dadosFluxo */}
               <BarChart data={dadosFluxo} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" tickFormatter={(v) => `R$ ${v}`} />
-                <Tooltip formatter={formatarMoedaToolTip} cursor={{ fill: '#f8fafc' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-100 dark:text-zinc-800/80" />
+                <XAxis dataKey="name" stroke="currentColor" className="text-slate-400 dark:text-zinc-500" />
+                <YAxis stroke="currentColor" className="text-slate-400 dark:text-zinc-500" tickFormatter={(v) => `R$ ${v}`} />
+                <Tooltip formatter={formatarMoedaToolTip} cursor={{ fill: 'currentColor', opacity: 0.04 }} />
                 <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
                   {dadosFluxo.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -56,11 +55,11 @@ export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, 
         </div>
 
         {/* Gráfico 2: Despesas por Categoria */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-200/60 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Despesas por Categoria</h3>
-          <div className="h-60 w-full flex items-center justify-center">
+        <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-gray-200/60 dark:border-zinc-800 shadow-xs flex flex-col justify-between transition-colors duration-200">
+          <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">Despesas por Categoria</h3>
+          <div className="h-60 w-full flex items-center justify-center [&_.recharts-default-tooltip]:!bg-white [&_.recharts-default-tooltip]:dark:!bg-zinc-800 [&_.recharts-default-tooltip]:!border-gray-200 [&_.recharts-default-tooltip]:dark:!border-zinc-700 [&_.recharts-default-tooltip_*]:!text-gray-900 [&_.recharts-default-tooltip_*]:dark:!text-zinc-100">
             {despesasPorCategoria.length === 0 ? (
-              <span className="text-xs font-medium text-gray-400">Nenhum gasto registrado neste período.</span>
+              <span className="text-xs font-medium text-gray-400 dark:text-zinc-500">Nenhum gasto registrado neste período.</span>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -78,7 +77,7 @@ export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, 
                     ))}
                   </Pie>
                   <Tooltip formatter={formatarMoedaToolTip} />
-                  <Legend verticalAlign="bottom" height={32} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }} />
+                  <Legend verticalAlign="bottom" height={32} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} className="text-slate-500 dark:text-zinc-400" />
                 </PieChart>
               </ResponsiveContainer>
             )}

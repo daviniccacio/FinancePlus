@@ -27,8 +27,30 @@ export default function App() {
   const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
+  // NOVO ESTADO: Controla se exibe Login (true) ou Cadastro (false)
+  const [isLoginView, setIsLoginView] = useState(true);
+
   // ESTADO DE NAVEGAÇÃO INTERNA
   const [abaAtiva, setAbaAtiva] = useState('dashboard');
+
+  // ESTADO DO MODO ESCURO (Inicializa lendo o localStorage)
+  const [dark, setDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
+
+  // Monitora o estado 'dark' e altera a classe na tag raiz <html>
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
 
   const [buscaTexto, setBuscaTexto] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
@@ -87,6 +109,26 @@ export default function App() {
     else toast.success('Bem-vindo de volta!');
   }
 
+  // NOVA FUNÇÃO: Lida com a criação de novas contas
+  async function lidarComCadastro(e) {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+
+      // Se o Supabase estiver configurado para exigir confirmação de e-mail:
+      if (data?.user && data?.user?.identities?.length === 0) {
+        toast.error('Este e-mail já está cadastrado.');
+        return;
+      }
+
+      toast.success('Cadastro realizado! Verifique seu e-mail de confirmação.');
+      setIsLoginView(true); // Retorna para a tela de login após cadastrar
+    } catch (error) {
+      toast.error(`Erro ao cadastrar: ${error.message}`);
+    }
+  }
+
   async function lidarComLogout() {
     await supabase.auth.signOut();
     setTransacoes([]);
@@ -114,7 +156,7 @@ export default function App() {
     if (error) {
       toast.error(`Erro ao salvar: ${error.message}`);
     } else {
-      toast.success(editandoId ? 'Lançamento atualizado!' : 'Lançamento cadastrado!');
+      toast.success(editandoId ? 'Lançamento updated!' : 'Lançamento cadastrado!');
       limparFormulario();
       buscarTransacoes();
     }
@@ -275,13 +317,12 @@ export default function App() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4 md:p-8 font-sans">
+      <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-200">
         <Toaster position="bottom-right" />
 
-        <div className="bg-white w-full max-w-4xl rounded-3xl shadow-sm border border-gray-200/60 overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-130">
+        <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl shadow-sm border border-gray-200/60 dark:border-zinc-800 overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-130 transition-colors duration-200">
 
           <div className="hidden md:flex flex-col justify-between p-10 bg-linear-to-br from-blue-600 to-indigo-800 text-white relative overflow-hidden">
-
             <div className="absolute inset-0 opacity-5 pointer-events-none">
               <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                 <path d="M0 150 Q 200 220, 400 110 T 800 200" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -310,40 +351,46 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-center p-8 md:p-12 bg-white">
+          <div className="flex flex-col justify-center p-8 md:p-12 bg-white dark:bg-zinc-900 transition-colors duration-200">
             <div className="w-full max-w-sm mx-auto space-y-6">
 
               <div className="flex md:hidden items-center gap-2 mb-2">
                 <Wallet className="w-5 h-5 text-blue-500" />
-                <h1 className="text-sm font-bold text-gray-900">Gestor Financeiro</h1>
+                <h1 className="text-sm font-bold text-gray-900 dark:text-zinc-100">Gestor Financeiro</h1>
               </div>
 
+              {/* TÍTULO E SUBTÍTULO ALTERNAM DINAMICAMENTE */}
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-gray-900 tracking-tight">Acesse sua conta</h3>
-                <p className="text-xs text-gray-400 font-medium">Insira suas credenciais para gerenciar a aplicação.</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">
+                  {isLoginView ? 'Acesse sua conta' : 'Crie sua conta'}
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">
+                  {isLoginView ? 'Insira suas credenciais para gerenciar a aplicação.' : 'Preencha os campos abaixo para começar de graça.'}
+                </p>
               </div>
 
-              <form onSubmit={lidarComLogin} className="space-y-4">
+              {/* O ONSUBMIT TAMBÉM ALTERNA ENTRE AS FUNÇÕES */}
+              <form onSubmit={isLoginView ? lidarComLogin : lidarComCadastro} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">E-mail de acesso</label>
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">E-mail de acesso</label>
                   <input
                     type="email"
                     placeholder="seu@email.com"
                     required
-                    className="w-full bg-neutral-50/60 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
+                    className="w-full bg-neutral-50/60 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-xs font-medium text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Senha</label>
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Senha</label>
                   <div className="relative">
                     <input
                       type={mostrarSenha ? "text" : "password"}
                       placeholder="••••••••"
                       required
-                      className="w-full bg-neutral-50/60 border border-gray-200 rounded-xl pl-3.5 pr-10 py-2.5 text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
+                      className="w-full bg-neutral-50/60 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs font-medium text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -359,11 +406,26 @@ export default function App() {
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-blue-600 transition-all shadow-sm shadow-blue-500/10 active:scale-[0.98] mt-2"
+                  className="w-full bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-blue-600 transition-all shadow-sm shadow-blue-500/10 active:scale-[0.98] mt-2 cursor-pointer"
                 >
-                  Entrar no Sistema
+                  {isLoginView ? 'Entrar no Sistema' : 'Criar minha Conta'}
                 </button>
               </form>
+
+              {/* BOTÃO DO RODAPÉ PARA ALTERNAR O ESTADO */}
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLoginView(!isLoginView);
+                    setEmail('');
+                    setPassword('');
+                  }}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  {isLoginView ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Voltar ao Login'}
+                </button>
+              </div>
 
             </div>
           </div>
@@ -374,11 +436,17 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] flex items-start">
+    <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
       <Toaster position="bottom-right" />
 
-      {/* SIDEBAR ESQUERDA NATIVA */}
-      <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={lidarComLogout} />
+      {/* SIDEBAR ESQUERDA NATIVA COM CONTROLE DE TEMA PASSA POR PROP */}
+      <Sidebar 
+        abaAtiva={abaAtiva} 
+        setAbaAtiva={setAbaAtiva} 
+        lidarComLogout={lidarComLogout} 
+        dark={dark} 
+        setDark={setDark} 
+      />
 
       {/* ÁREA DE CONTEÚDO PRINCIPAL (DIREITA) */}
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
@@ -388,14 +456,14 @@ export default function App() {
           <div>
             {abaAtiva === 'dashboard' && (
               <>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Painel de Controle</h2>
-                <p className="text-xs text-gray-400 font-medium">Análise visual e estatística consolidada do período selecionado.</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Painel de Controle</h2>
+                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Análise visual e estatística consolidada do período selecionado.</p>
               </>
             )}
             {abaAtiva === 'lancamentos' && (
               <>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Lançamentos</h2>
-                <p className="text-xs text-gray-400 font-medium">Histórico detalhado e gerenciamento de receitas e despesas.</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Lançamentos</h2>
+                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado e gerenciamento de receitas e despesas.</p>
               </>
             )}
           </div>
