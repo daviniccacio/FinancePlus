@@ -29,8 +29,13 @@ export default function App() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // 🔄 SISTEMA DE NAVEGAÇÃO DE AUTENTICAÇÃO ATUALIZADO
-  // Aceita os valores: 'login' | 'cadastro' | 'solicitar' | 'definir'
-  const [viewAuth, setViewAuth] = useState('login');
+  // Detecta na inicialização se veio pelo link do e-mail para evitar ir para o Dashboard por engano
+  const [viewAuth, setViewAuth] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) {
+      return 'definir';
+    }
+    return 'login';
+  });
 
   // ESTADO DE NAVEGAÇÃO INTERNA
   const [abaAtiva, setAbaAtiva] = useState('dashboard');
@@ -96,16 +101,16 @@ export default function App() {
   // OUVINTE DE ESTADO DE AUTENTICAÇÃO ROBUSTO
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      
+
       // Intercepta se o usuário clicou no link de redefinição enviado por e-mail
       if (event === 'PASSWORD_RECOVERY') {
         setViewAuth('definir');
       }
     });
-    
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -365,40 +370,43 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
-  // --- RENDERIZAÇÃO DO FLUXO EXTERNO (NÃO AUTENTICADO) ---
+  // =========================================================================
+  // --- CONTROLE DE RENDERIZAÇÃO DE TELAS (ORDEM CORRIGIDA) ---
+  // =========================================================================
+
+  // 1. PRIORIDADE MÁXIMA: Se a rota for redefinir ('definir'), segura o usuário aqui de forma absoluta
+  if (viewAuth === 'definir') {
+    return (
+      <>
+        <Toaster position="bottom-right" />
+        <AuthRecovery
+          modo="definir"
+          aoVoltar={async () => {
+            await supabase.auth.signOut();
+            setViewAuth('login');
+          }}
+          aoSubmeter={lidarComNovaSenha}
+        />
+      </>
+    );
+  }
+
+  // 2. SEGUNDA PRIORIDADE: Se não houver sessão ativa, controla as telas externas restantes
   if (!session) {
-    // Intercepta e renderiza a tela se estiver pedindo a redefinição por e-mail
     if (viewAuth === 'solicitar') {
       return (
         <>
           <Toaster position="bottom-right" />
-          <AuthRecovery 
-            modo="solicitar" 
-            aoVoltar={() => setViewAuth('login')} 
-            aoSubmeter={lidarComSolicitacaoEmail} 
+          <AuthRecovery
+            modo="solicitar"
+            aoVoltar={() => setViewAuth('login')}
+            aoSubmeter={lidarComSolicitacaoEmail}
           />
         </>
       );
     }
 
-    // Intercepta e renderiza a tela se o usuário clicou no link do e-mail
-    if (viewAuth === 'definir') {
-      return (
-        <>
-          <Toaster position="bottom-right" />
-          <AuthRecovery 
-            modo="definir" 
-            aoVoltar={async () => {
-              await supabase.auth.signOut();
-              setViewAuth('login');
-            }} 
-            aoSubmeter={lidarComNovaSenha} 
-          />
-        </>
-      );
-    }
-
-    // Estrutura Base de Login e Cadastro Mantida Integramente
+    // Estrutura Base de Login e Cadastro Externa
     return (
       <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-200">
         <Toaster position="bottom-right" />
@@ -483,8 +491,7 @@ export default function App() {
                       {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  
-                  {/* ✨ NOVO LINK: DISPARADOR DO ESQUECI A SENHA */}
+
                   {viewAuth === 'login' && (
                     <div className="text-right pt-1">
                       <button
@@ -532,17 +539,17 @@ export default function App() {
     );
   }
 
-  // --- RENDEREZAR ÁREA INTERNA (AUTENTICADO) ---
+  // 3. TERCEIRA PRIORIDADE: Se houver sessão normal e estável, renderiza a Área Interna
   return (
     <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
       <Toaster position="bottom-right" />
 
-      <Sidebar 
-        abaAtiva={abaAtiva} 
-        setAbaAtiva={setAbaAtiva} 
-        lidarComLogout={lidarComLogout} 
-        dark={dark} 
-        setDark={setDark} 
+      <Sidebar
+        abaAtiva={abaAtiva}
+        setAbaAtiva={setAbaAtiva}
+        lidarComLogout={lidarComLogout}
+        dark={dark}
+        setDark={setDark}
       />
 
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
@@ -574,10 +581,10 @@ export default function App() {
           )}
         </div>
 
-        <CompetenceBar 
-          filtroCompetencia={filtroCompetencia} 
-          setFiltroCompetencia={setFiltroCompetencia} 
-          setPaginaAtual={setPaginaAtual} 
+        <CompetenceBar
+          filtroCompetencia={filtroCompetencia}
+          setFiltroCompetencia={setFiltroCompetencia}
+          setPaginaAtual={setPaginaAtual}
         />
 
         {abaAtiva === 'dashboard' && (

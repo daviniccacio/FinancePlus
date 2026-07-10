@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const CATEGORIAS_PADRAO = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer'];
+const CATEGORIAS_PADRAO = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Renda', 'Transferência', 'Contas', 'Investimentos', 'Outros'];
 
 export default function TransactionModal({
   editandoId,
