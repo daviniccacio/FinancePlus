@@ -1,15 +1,11 @@
 import { AlertTriangle, CalendarClock, CheckCircle, AlertCircle } from 'lucide-react';
 
-/**
- * Componente AlertsPanel - Monitora vencimentos e limites de orçamentos
- */
 export default function AlertsPanel({ transacoes = [], limites = {} }) {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   
-  const mesAtualTexto = hoje.toISOString().substring(0, 7); // Formato "AAAA-MM"
+  const mesAtualTexto = hoje.toISOString().substring(0, 7);
 
-  // --- PARTE A: ALERTAS DE CONTAS A PAGAR/VENCIMENTOS ---
   const contasPendentes = transacoes.filter((t) => {
     const tipoTexto = t.tipo ? t.tipo.toLowerCase().trim() : '';
     const statusTexto = t.status ? t.status.toLowerCase().trim() : '';
@@ -60,7 +56,6 @@ export default function AlertsPanel({ transacoes = [], limites = {} }) {
     };
   }).filter(item => item.statusVencimento === 'vencida' || item.statusVencimento === 'urgente');
 
-  // --- PARTE B: ALERTAS DE ORÇAMENTO ESTOURADO (MÊS ATUAL) ---
   const despesasMesAtual = transacoes.filter(t => {
     const tipoTexto = t.tipo ? t.tipo.toLowerCase().trim() : '';
     const ehSaida = tipoTexto === 'saída' || tipoTexto === 'saida' || tipoTexto === 'despesa';
@@ -91,14 +86,13 @@ export default function AlertsPanel({ transacoes = [], limites = {} }) {
             mensagem: porcentagem >= 100 
               ? `Limite esgotado! (${Math.round(porcentagem)}% consumido)` 
               : `Atenção! Você atingiu ${Math.round(porcentagem)}% do limite.`,
-            diferencaDias: porcentagem >= 100 ? -999 : -100 // Garante prioridade visual no topo
+            diferencaDias: porcentagem >= 100 ? -999 : -100 
           });
         }
       }
     }
   });
 
-  // Combinar e ordenar os alertas por criticidade
   const todosAlertas = [...alertasOrcamento, ...alertasVencimento].sort((a, b) => a.diferencaDias - b.diferencaDias);
 
   if (todosAlertas.length === 0) {

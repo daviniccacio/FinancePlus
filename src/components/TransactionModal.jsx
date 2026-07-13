@@ -45,7 +45,6 @@ export default function TransactionModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 animate-fade-in">
-      {/* 📐 MUDANÇA AQUI: Alterado de max-w-md para max-w-2xl para alargar o modal */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-gray-150 dark:border-zinc-800 text-gray-950 dark:text-zinc-50 transition-colors duration-200">
         
         <h2 className="text-xl font-bold mb-5 text-gray-950 dark:text-zinc-100">
@@ -54,10 +53,8 @@ export default function TransactionModal({
 
         <form onSubmit={salvarLancamento} className="space-y-4">
           
-          {/* 📐 GRID SISTEMA: Base de 6 colunas no desktop (md:) e 1 coluna no mobile */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             
-            {/* Campo: Descrição (Ocupa 4 colunas) */}
             <div className="md:col-span-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Descrição
@@ -71,7 +68,6 @@ export default function TransactionModal({
               />
             </div>
 
-            {/* Campo: Valor (Ocupa 2 colunas) */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Valor (R$)
@@ -90,7 +86,6 @@ export default function TransactionModal({
               />
             </div>
 
-            {/* Campo: Categoria (Ocupa 3 colunas) */}
             <div className="md:col-span-3">
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
@@ -135,7 +130,6 @@ export default function TransactionModal({
               )}
             </div>
 
-            {/* Campo: Dados de Pagamento (Ocupa 3 colunas) */}
             <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Dados de Pagamento (Opcional)
@@ -149,7 +143,6 @@ export default function TransactionModal({
               />
             </div>
 
-            {/* Campo: Data do Lançamento (Ocupa 3 colunas) */}
             <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Data do Lançamento
@@ -163,7 +156,6 @@ export default function TransactionModal({
               />
             </div>
 
-            {/* Campo: Data de Vencimento (Ocupa 3 colunas) */}
             <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Data de Vencimento
@@ -176,7 +168,6 @@ export default function TransactionModal({
               />
             </div>
 
-            {/* Campo: Tipo (Ocupa 3 colunas) */}
             <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Tipo
@@ -192,7 +183,6 @@ export default function TransactionModal({
               </select>
             </div>
 
-            {/* Campo: Status (Ocupa 3 colunas) */}
             <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Status
@@ -208,7 +198,6 @@ export default function TransactionModal({
               </select>
             </div>
 
-            {/* Seção Completa: Repetição e Parcelamento (Ocupa a largura total: 6 colunas) */}
             {!editandoId && (
               <div className="md:col-span-6 bg-gray-50 dark:bg-zinc-800/30 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl space-y-3 mt-1">
                 <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 dark:text-zinc-300 cursor-pointer select-none">

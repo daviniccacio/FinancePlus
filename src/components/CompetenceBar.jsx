@@ -8,10 +8,10 @@ const CATEGORIAS_PADRAO = [
 export default function CompetenceBar({ 
   filtroCompetencia, 
   setFiltroCompetencia, 
-  filtroPeriodo,       // Novo: 'mensal' | '3meses' | 'ano' | 'tudo'
-  setFiltroPeriodo,    // Novo
-  filtroCategoria,     // Novo: '' ou nome da categoria
-  setFiltroCategoria,  // Novo
+  filtroPeriodo,       
+  setFiltroPeriodo,    
+  filtroCategoria,    
+  setFiltroCategoria,  
   setPaginaAtual 
 }) {
 

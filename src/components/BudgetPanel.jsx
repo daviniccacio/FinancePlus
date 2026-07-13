@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import { Target, AlertCircle, CheckCircle2, Pencil, Check, X, Plus, Trash2, Loader2, Wallet } from 'lucide-react';
 

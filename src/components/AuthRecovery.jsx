@@ -2,27 +2,22 @@ import { useState } from 'react';
 import { Mail, Lock, ArrowLeft, KeyRound, Loader2, Eye, EyeOff } from 'lucide-react';
 
 /**
- * Componente Unificado de Recuperação de Senha
- * @param {string} modo - Pode ser 'solicitar' (inserir e-mail) ou 'definir' (inserir nova senha)
- * @param {function} aoVoltar - Função executada ao clicar no botão "Voltar para o Login"
- * @param {function} aoSubmeter - Função que conectará a tela com a lógica do Supabase no Passo 2
+ * @param {string} modo
+ * @param {function} aoVoltar 
+ * @param {function} aoSubmeter 
  */
 export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter }) {
-  // Estados dos formulários
   const [email, setEmail] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   
-  // Estados de controle visual
   const [carregando, setCarregando] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  // Tratamento do envio do formulário
   const lidarComEnvio = async (e) => {
     e.preventDefault();
     setCarregando(true);
 
-    // Encaminha os dados coletados para a função que ligará ao Supabase no Passo 2
     if (modo === 'solicitar') {
       await aoSubmeter({ email }, setCarregando);
     } else {
