@@ -1,6 +1,16 @@
 import { PlusCircle, FileText, FolderOpen, Tag, CreditCard, AlertTriangle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function TransactionTable({ carregando, transacoesPaginadas, totalPaginas, paginaAtual, setPaginaAtual, setIsModalAberto, exportarPDF, prepararEdicao, setIdExclusaoConfirmar }) {
+export default function TransactionTable({ 
+  carregando, 
+  transacoesPaginadas, 
+  totalPaginas, 
+  paginaAtual, 
+  setPaginaAtual, 
+  setIsModalAberto, 
+  exportarPDF, 
+  prepararEdicao, 
+  setIdExclusaoConfirmar 
+}) {
 
   function formatarDataBRL(dataString) {
     if (!dataString) return '-';
@@ -27,6 +37,8 @@ export default function TransactionTable({ carregando, transacoesPaginadas, tota
 
   return (
     <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200/60 dark:border-zinc-800 overflow-hidden shadow-sm w-full transition-colors duration-200">
+      
+      {/* Cabeçalho limpo apenas com Novo Lançamento e PDF */}
       <div className="p-4 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center gap-2">
         <h2 className="font-bold text-xs md:text-sm text-gray-900 dark:text-zinc-100">Histórico de Lançamentos</h2>
         <div className="flex items-center gap-2">

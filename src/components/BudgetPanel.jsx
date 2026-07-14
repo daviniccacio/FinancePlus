@@ -28,7 +28,7 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Buscar as configurações do banco (Memorizada com useCallback)
+  // 2. Buscar as configurações do banco (CORRIGIDO: adicionado dependências no useCallback)
   const carregarDadosDasMetas = useCallback(async () => {
     if (!userId) return;
     try {
@@ -58,7 +58,7 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
     } finally {
       setCarregandoMetas(false);
     }
-  }, [userId]);
+  }, [userId, setLimites]); // CORREÇÃO AQUI: userId e setLimites adicionados como dependências
 
   // 3. Buscar histórico total para acumular as "Saídas" das Metas (Memorizada com useCallback)
   const carregarHistoricoGeral = useCallback(async () => {
@@ -252,7 +252,7 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Categoria / Nome</label>
-                <input type="text" placeholder="Ex: Viagem, Aluguel" desert-value="" required value={novaCategoria} onChange={(e) => setNovaCategoria(e.target.value)} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100" />
+                <input type="text" placeholder="Ex: Viagem, Aluguel" required value={novaCategoria} onChange={(e) => setNovaCategoria(e.target.value)} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100" />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Valor Alvo / Limite (R$)</label>
@@ -270,19 +270,16 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
           const itemConfig = limites[categoria];
           const ehMeta = itemConfig.tipo === 'meta';
           
-          // Quantidade de progresso baseada no tipo escolhido
           const valorProgresso = ehMeta ? (historicoMetas[categoria] || 0) : (gastosMesPorCategoria[categoria] || 0);
           const limiteDefinido = itemConfig.limite;
           const isEditing = categoriaEmEdicao === categoria;
           
           const porcentagem = limiteDefinido > 0 ? Math.min(Math.round((valorProgresso / limiteDefinido) * 100), 100) : 0;
 
-          // Customização visual baseada no tipo (Meta = Verde foco em poupar | Orçamento = Azul foco em limite)
           let corBarra = ehMeta ? 'bg-emerald-500' : 'bg-blue-500';
           let corTexto = ehMeta ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400';
           let corFundoCard = 'bg-slate-50/50 dark:bg-zinc-800/30';
 
-          // Regra de estouro: Alerta vermelho apenas se for Orçamento Mensal
           if (!ehMeta && porcentagem >= 100) {
             corBarra = 'bg-red-500'; 
             corTexto = 'text-red-600 dark:text-red-400'; 
@@ -323,12 +320,10 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
                 </div>
               </div>
 
-              {/* Barra de Progresso */}
               <div className="w-full bg-gray-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
                 <div className={`h-full transition-all duration-500 ease-out ${corBarra}`} style={{ width: `${porcentagem}%` }} />
               </div>
 
-              {/* Indicadores de Feedback de Status */}
               <div className="flex items-center gap-1 text-[10px] font-semibold opacity-90">
                 {ehMeta ? (
                   porcentagem >= 100 ? (
