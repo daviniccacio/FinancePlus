@@ -3,7 +3,7 @@ import SummaryCards from './SummaryCards';
 import AlertsPanel from './AlertsPanel';
 import BudgetPanel from './BudgetPanel';
 
-export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, transacoesFiltradas }) {
+export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, transacoesFiltradas, limites = {}, setLimites }) {
   
   const dadosFluxo = [
     { name: 'Entradas', valor: totalEntradas, fill: '#16a34a' },
@@ -32,9 +32,9 @@ export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, 
     <div className="space-y-4">
       <SummaryCards totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} />
 
-      <AlertsPanel transacoes={transacoesFiltradas} />
+      <AlertsPanel transacoes={transacoesFiltradas} limites={limites}/>
 
-      <BudgetPanel transacoes={transacoesFiltradas} />
+      <BudgetPanel transacoes={transacoesFiltradas} limites={limites} setLimites={setLimites}/>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         

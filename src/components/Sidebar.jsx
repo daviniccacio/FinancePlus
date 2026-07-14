@@ -1,10 +1,12 @@
-import { LayoutDashboard, ReceiptText, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, ReceiptText, LogOut, Sun, Moon, Settings } from 'lucide-react';
 import minhaLogo from "../assets/icon-financeplus.png"
 
 export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, setDark }) {
+  // ⚙️ Adicionado 'configuracoes' ao array de menus principais
   const menus = [
     { id: 'dashboard', nome: 'Resumo / Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'lancamentos', nome: 'Lançamentos', icon: <ReceiptText className="w-4 h-4" /> }
+    { id: 'lancamentos', nome: 'Lançamentos', icon: <ReceiptText className="w-4 h-4" /> },
+    { id: 'configuracoes', nome: 'Configurações', icon: <Settings className="w-4 h-4" /> }
   ];
 
   return (

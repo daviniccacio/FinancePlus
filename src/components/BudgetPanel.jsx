@@ -3,8 +3,7 @@ import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import { Target, AlertCircle, CheckCircle2, Pencil, Check, X, Plus, Trash2, Loader2, Wallet } from 'lucide-react';
 
-export default function BudgetPanel({ transacoes = [] }) {
-  const [limites, setLimites] = useState({});
+export default function BudgetPanel({ transacoes = [], limites={}, setLimites }) {
   const [historicoMetas, setHistoricoMetas] = useState({});
   const [carregandoMetas, setCarregandoMetas] = useState(true);
   const [userId, setUserId] = useState(null);

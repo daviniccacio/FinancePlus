@@ -14,6 +14,7 @@ import DeleteModal from './components/DeleteModal';
 import AuthRecovery from './components/AuthRecovery';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
+import Configuracoes from './components/Config';
 import { traduzirErroSupabase, validarCamposAuth } from './utils/AuthHelpers';
 
 // Adicione esta função bem aqui (antes do export default function App)
@@ -31,6 +32,7 @@ function parseMascaraParaNumero(valor) {
 }
 
 export default function App() {
+  const [limites, setLimites] = useState({});
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -148,7 +150,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 🗑️ O SEGUNDO USEEFFECT QUE ESTAVA AQUI FOI REMOVIDO DAQUI POR COMPLETO!
 
   // 1. LOGIN BLINDADO
   async function lidarComLogin(e) {
@@ -278,12 +279,8 @@ export default function App() {
         ? dataVencimento.split('-').map(Number)
         : [null, null, null];
 
-      // ─── MODO DE EDIÇÃO ───────────────────────────────────────
-      // ─── MODO DE EDIÇÃO ───────────────────────────────────────
       if (editandoId) {
         if (grupoId) {
-          // 1. Atualiza APENAS os campos compartilhados por TODO o grupo (Valor, Categoria, Tipo, Pagamento)
-          // Repare que NÃO atualizamos "data", "data_vencimento" nem "descricao" aqui para não estragar os outros meses!
           const { error: erroGrupo } = await supabase
             .from('transacoes')
             .update({
@@ -328,7 +325,6 @@ export default function App() {
           if (error) throw error;
         }
       }
-      // ─── MODO DE INSERÇÃO (NOVO) ──────────────────────────────
       else {
         // Geramos um ID de grupo único se o utilizador optou por repetir
         const novoGrupoId = repetir ? crypto.randomUUID() : null;
@@ -603,11 +599,6 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
-  // =========================================================================
-  // --- CONTROLE DE RENDERIZAÇÃO DE TELAS (ORDEM CORRIGIDA) ---
-  // =========================================================================
-
-  // 1. PRIORIDADE MÁXIMA: Se a rota for redefinir ('definir'), segura o usuário aqui de forma absoluta
   if (viewAuth === 'definir') {
     return (
       <>
@@ -801,6 +792,12 @@ export default function App() {
                 <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado e gerenciamento de receitas e despesas.</p>
               </>
             )}
+            {abaAtiva === 'configuracoes' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Ajustes</h2>
+                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Gerencie suas preferências e segurança da conta.</p>
+              </>
+            )}
           </div>
 
           {abaAtiva === 'lancamentos' && (
@@ -830,6 +827,8 @@ export default function App() {
             totalSaidas={totalSaidas}
             saldoAtual={saldoAtual}
             transacoesFiltradas={transacoesFiltradas}
+            limites={limites}  
+            setLimites={setLimites}
           />
         )}
 
@@ -857,6 +856,21 @@ export default function App() {
               setIdExclusaoConfirmar={setIdExclusaoConfirmar}
             />
           </>
+        )}
+        {abaAtiva === 'configuracoes' && (
+          <>
+            <Configuracoes session={session} onLogout={lidarComLogout} />
+            <CompetenceBar
+              filtroCompetencia={filtroCompetencia}
+              setFiltroCompetencia={setFiltroCompetencia}
+              filtroPeriodo={filtroPeriodo}
+              setFiltroPeriodo={setFiltroPeriodo}
+              filtroCategoria={filtroCategoria}
+              setFiltroCategoria={setFiltroCategoria}
+              setPaginaAtual={setPaginaAtual}
+            />
+          </>
+
         )}
       </main>
 
@@ -896,11 +910,11 @@ export default function App() {
           ejecutarExclusao={ejecutarExclusao}
         />
       )}
-      <ChatIA 
-        transacoes={transacoesFiltradas} 
-        saldoAtual={saldoAtual} 
+      <ChatIA
+        transacoes={transacoesFiltradas}
+        saldoAtual={saldoAtual}
       />
-      
+
     </div>
   );
 }
