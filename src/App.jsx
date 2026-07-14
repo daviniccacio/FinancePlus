@@ -811,29 +811,39 @@ export default function App() {
           )}
         </div>
 
-        <CompetenceBar
-          filtroCompetencia={filtroCompetencia}
-          setFiltroCompetencia={setFiltroCompetencia}
-          filtroPeriodo={filtroPeriodo}
-          setFiltroPeriodo={setFiltroPeriodo}
-          filtroCategoria={filtroCategoria}
-          setFiltroCategoria={setFiltroCategoria}
-          setPaginaAtual={setPaginaAtual}
-        />
-
         {abaAtiva === 'dashboard' && (
-          <DashboardView
-            totalEntradas={totalEntradas}
-            totalSaidas={totalSaidas}
-            saldoAtual={saldoAtual}
-            transacoesFiltradas={transacoesFiltradas}
-            limites={limites}  
-            setLimites={setLimites}
-          />
+          <>
+            <CompetenceBar
+              filtroCompetencia={filtroCompetencia}
+              setFiltroCompetencia={setFiltroCompetencia}
+              filtroPeriodo={filtroPeriodo}
+              setFiltroPeriodo={setFiltroPeriodo}
+              filtroCategoria={filtroCategoria}
+              setFiltroCategoria={setFiltroCategoria}
+              setPaginaAtual={setPaginaAtual}
+            />
+            <DashboardView
+              totalEntradas={totalEntradas}
+              totalSaidas={totalSaidas}
+              saldoAtual={saldoAtual}
+              transacoesFiltradas={transacoesFiltradas}
+              limites={limites}
+              setLimites={setLimites}
+            />
+          </>
         )}
 
         {abaAtiva === 'lancamentos' && (
           <>
+            <CompetenceBar
+              filtroCompetencia={filtroCompetencia}
+              setFiltroCompetencia={setFiltroCompetencia}
+              filtroPeriodo={filtroPeriodo}
+              setFiltroPeriodo={setFiltroPeriodo}
+              filtroCategoria={filtroCategoria}
+              setFiltroCategoria={setFiltroCategoria}
+              setPaginaAtual={setPaginaAtual}
+            />
             <FilterCenter
               buscaTexto={buscaTexto}
               setBuscaTexto={setBuscaTexto}
@@ -858,19 +868,7 @@ export default function App() {
           </>
         )}
         {abaAtiva === 'configuracoes' && (
-          <>
-            <Configuracoes session={session} onLogout={lidarComLogout} />
-            <CompetenceBar
-              filtroCompetencia={filtroCompetencia}
-              setFiltroCompetencia={setFiltroCompetencia}
-              filtroPeriodo={filtroPeriodo}
-              setFiltroPeriodo={setFiltroPeriodo}
-              filtroCategoria={filtroCategoria}
-              setFiltroCategoria={setFiltroCategoria}
-              setPaginaAtual={setPaginaAtual}
-            />
-          </>
-
+          <Configuracoes session={session} onLogout={lidarComLogout} />
         )}
       </main>
 
