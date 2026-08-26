@@ -51,6 +51,11 @@ export function useTransactions(session) {
     tipoRepeticao,
     numeroParcelas
   }, limparFormularioCallback) => {
+    if (!session?.user?.id) {
+      toast.error('Sessão inválida. Faça login novamente.');
+      return;
+    }
+
     if (!descricao || !valorMascara || !data) {
       alert('Preencha os campos obrigatórios.');
       return;
@@ -70,18 +75,23 @@ export function useTransactions(session) {
 
       if (editandoId) {
         if (grupoId) {
+          // Atualiza o grupo filtrando obrigatoriamente por grupo_id E user_id
           const { error: erroGrupo } = await supabase
             .from('transacoes')
             .update({ valor: valorNumerico, categoria, tipo, dados_pagamento: dadosPagamento || null })
-            .eq('grupo_id', grupoId);
+            .eq('grupo_id', grupoId)
+            .eq('user_id', session.user.id);
           if (erroGrupo) throw erroGrupo;
 
+          // Atualiza o item individual garantindo o id E user_id
           const { error: erroIndividual } = await supabase
             .from('transacoes')
             .update({ descricao, status, data, data_vencimento: dataVencimento || null })
-            .eq('id', editandoId);
+            .eq('id', editandoId)
+            .eq('user_id', session.user.id);
           if (erroIndividual) throw erroIndividual;
         } else {
+          // Atualiza lançamento único garantindo o id E user_id
           const { error } = await supabase
             .from('transacoes')
             .update({
@@ -95,7 +105,8 @@ export function useTransactions(session) {
               data_vencimento: dataVencimento || null,
               dados_pagamento: dadosPagamento || null
             })
-            .eq('id', editandoId);
+            .eq('id', editandoId)
+            .eq('user_id', session.user.id);
           if (error) throw error;
         }
       } else {
@@ -154,12 +165,15 @@ export function useTransactions(session) {
     }
   };
 
-  // 3. Excluir uma transação
-  // 3. Excluir uma transação (com suporte a exclusão em cascata por grupo)
+  // 3. Excluir uma transação (garantindo o filtro por user_id)
   const excluirTransacao = async (idExclusaoConfirmar, apagarEmLote, grupoIdAlvo, editandoId, limparFormularioCallback) => {
-    if (!idExclusaoConfirmar) return;
+    if (!idExclusaoConfirmar || !session?.user?.id) return;
     try {
-      let query = supabase.from('transacoes').delete();
+      // Inicia a query de exclusão sempre limitada ao ID do utilizador conectado
+      let query = supabase
+        .from('transacoes')
+        .delete()
+        .eq('user_id', session.user.id);
 
       // Se o utilizador escolheu apagar a série inteira e o item tem grupo
       if (apagarEmLote && grupoIdAlvo) {
