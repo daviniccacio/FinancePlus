@@ -1,9 +1,13 @@
+// src/App.jsx
 import { useState, useEffect } from 'react';
-import { supabase } from './services/supabaseClient';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast, { Toaster } from 'react-hot-toast';
-import { Wallet, Eye, EyeOff, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+
+import { useAuth } from './hooks/useAuth';
+import { useTransactions } from './hooks/useTransactions';
+import LoginScreen from './components/LoginScreen';
 
 import CompetenceBar from './components/CompetenceBar';
 import ChatIA from './components/chatIA';
@@ -15,55 +19,27 @@ import AuthRecovery from './components/AuthRecovery';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
-import { traduzirErroSupabase, validarCamposAuth } from './utils/AuthHelpers';
-
-// Adicione esta função bem aqui (antes do export default function App)
-function parseMascaraParaNumero(valor) {
-  if (!valor) return 0;
-  if (typeof valor === 'number') return valor;
-
-  // Remove o "R$", remove os pontos de milhar e substitui a vírgula decimal por ponto
-  const valorLimpo = valor
-    .replace(/R\$\s?/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.');
-
-  return parseFloat(valorLimpo);
-}
 
 export default function App() {
+  const { session, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
+
+  // Utilizando o nosso Hook de Transações
+  const {
+    transacoes,
+    carregando,
+    buscarTransacoes,
+    salvarLancamento: salvarLancamentoHook,
+    excluirTransacao
+  } = useTransactions(session);
+
   const [limites, setLimites] = useState({});
-  const [session, setSession] = useState(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [transacoes, setTransacoes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-  const [editandoId, setEditandoId] = useState(null);
-  const [isModalAberto, setIsModalAberto] = useState(false);
-  const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-
-  // 🔄 SISTEMA DE NAVEGAÇÃO DE AUTENTICAÇÃO ATUALIZADO
-  // Detecta na inicialização se veio pelo link do e-mail para evitar ir para o Dashboard por engano
-  const [viewAuth, setViewAuth] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) {
-      return 'definir';
-    }
-    return 'login';
-  });
-
-  // ESTADO DE NAVEGAÇÃO INTERNA
   const [abaAtiva, setAbaAtiva] = useState('dashboard');
 
-  // ESTADO DO MODO ESCURO (Inicializa lendo o localStorage)
   const [dark, setDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark';
-    }
+    if (typeof window !== 'undefined') return localStorage.getItem('theme') === 'dark';
     return false;
   });
 
-  // Monitora o estado 'dark' e altera a classe na tag raiz <html>
   useEffect(() => {
     if (dark) {
       document.documentElement.classList.add('dark');
@@ -74,20 +50,32 @@ export default function App() {
     }
   }, [dark]);
 
+  // Carrega as transações assim que a sessão estiver ativa
+  useEffect(() => {
+    const inicializarDados = async () => {
+      if (session?.user?.id) {
+        await buscarTransacoes();
+      }
+    };
+    inicializarDados();
+  }, [session, buscarTransacoes]);
+
+  // Estados dos Filtros
   const [buscaTexto, setBuscaTexto] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 10;
-
-  // FILTRO DE COMPETÊNCIA VOLTOU AO PADRÃO (MÊS/ANO) AS ANTES
   const [filtroCompetencia, setFiltroCompetencia] = useState(() => {
     const hoje = new Date();
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [filtroPeriodo, setFiltroPeriodo] = useState('mensal');
 
-  const [filtroPeriodo, setFiltroPeriodo] = useState('mensal'); // 'mensal', '3meses', 'ano', 'tudo'
-
+  // Estados do Modal de Lançamento
+  const [isModalAberto, setIsModalAberto] = useState(false);
+  const [editandoId, setEditandoId] = useState(null);
+  const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
   const [descricao, setDescricao] = useState('');
   const [valorMascara, setValorMascara] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -97,336 +85,60 @@ export default function App() {
   const [dataVencimento, setDataVencimento] = useState('');
   const [dadosPagamento, setDadosPagamento] = useState('');
   const [repetir, setRepetir] = useState(false);
-  const [tipoRepeticao, setTipoRepeticao] = useState('fixo'); // 'fixo' | 'parcelado'
+  const [tipoRepeticao, setTipoRepeticao] = useState('fixo');
   const [numeroParcelas, setNumeroParcelas] = useState(2);
   const [grupoId, setGrupoId] = useState(null);
 
-  async function buscarTransacoes(sessaoAtual) {
-    // Usa a sessão passada por argumento ou cai de volta para o estado global
-    const s = sessaoAtual || session;
-    if (!s?.user?.id) return;
-
-    try {
-      setCarregando(true);
-      const { data: dados, error } = await supabase
-        .from('transacoes')
-        .select('*')
-        .eq('user_id', s.user.id)
-        .order('data', { ascending: false });
-      if (error) throw error;
-      setTransacoes(dados || []);
-    } catch (error) {
-      console.error(error);
-      toast.error('Erro ao buscar dados do banco.');
-    } finally {
-      setCarregando(false);
-    }
+  function limparFormulario() {
+    setEditandoId(null);
+    setGrupoId(null);
+    setDescricao('');
+    setValorMascara('');
+    setCategoria('');
+    setData(new Date().toISOString().split('T')[0]);
+    setTipo('Saída');
+    setStatus('Pago');
+    setDataVencimento('');
+    setDadosPagamento('');
+    setIsModalAberto(false);
+    setRepetir(false);
+    setTipoRepeticao('fixo');
+    setNumeroParcelas(2);
   }
 
-  // OUVINTE DE ESTADO DE AUTENTICAÇÃO ROBUSTO
-  // 🔄 OUVINTE DE ESTADO DE AUTENTICAÇÃO ATUALIZADO (SEM RENDER EM CASCATA)
-  useEffect(() => {
-    // Busca a sessão inicial e já dispara a busca se o usuário estiver logado
-    supabase.auth.getSession().then(({ data: { session: sessaoInicial } }) => {
-      setSession(sessaoInicial);
-      if (sessaoInicial) buscarTransacoes(sessaoInicial);
-    });
-
-    // Monitora mudanças de login/logout em tempo real
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessaoNova) => {
-      setSession(sessaoNova);
-
-      if (sessaoNova) {
-        buscarTransacoes(sessaoNova);
-      }
-
-      // Intercepta se o usuário clicou no link de redefinição enviado por e-mail
-      if (event === 'PASSWORD_RECOVERY') {
-        setViewAuth('definir');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-
-  // 1. LOGIN BLINDADO
-  async function lidarComLogin(e) {
-    e.preventDefault();
-
-    // Validação local rápida (passamos false para não exigir regra de número no login)
-    const validacao = validarCamposAuth(email, password, false);
-    if (!validacao.valido) {
-      toast.error(validacao.mensagem);
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(traduzirErroSupabase(error));
-    } else {
-      toast.success('Bem-vindo de volta!');
-    }
-  }
-
-  // 2. CADASTRO COM BARREIRA DE SEGURANÇA
-  async function lidarComCadastro(e) {
-    e.preventDefault();
-
-    // Validação rígida de senha forte antes de enviar para a nuvem
-    const validacao = validarCamposAuth(email, password, true);
-    if (!validacao.valido) {
-      toast.error(validacao.mensagem);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-
-      // Segurança extra do Supabase: impede vazamento de contas existentes
-      if (data?.user && data?.user?.identities?.length === 0) {
-        toast.error('Este e-mail já está cadastrado no sistema.');
-        return;
-      }
-
-      toast.success('Cadastro realizado! Verifique seu e-mail de confirmação.');
-      setViewAuth('login');
-    } catch (error) {
-      toast.error(`Erro ao cadastrar: ${traduzirErroSupabase(error)}`);
-    }
-  }
-
-  // 3. RECUPERAÇÃO DE E-MAIL TRATADA
-  async function lidarComSolicitacaoEmail({ email: emailRecuperacao }, setCarregando) {
-    if (!emailRecuperacao || !emailRecuperacao.includes('@')) {
-      toast.error('Por favor, insira um e-mail válido.');
-      setCarregando(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(emailRecuperacao, {
-        redirectTo: window.location.origin, // Garante redirecionamento perfeito em local ou prod
-      });
-      if (error) throw error;
-
-      toast.success('Link de recuperação enviado! Verifique sua caixa de entrada.');
-      setViewAuth('login');
-    } catch (error) {
-      toast.error(traduzirErroSupabase(error));
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  // 4. GRAVAÇÃO DA NOVA SENHA SEGURA
-  async function lidarComNovaSenha({ novaSenha, confirmarSenha }, setCarregando) {
-    if (novaSenha !== confirmarSenha) {
-      toast.error('As senhas digitadas não coincidem!');
-      setCarregando(false);
-      return;
-    }
-
-    // Validação local de força de senha para a nova credencial
-    const validacao = validarCamposAuth(email, novaSenha, true);
-    if (!validacao.valido) {
-      toast.error(validacao.mensagem);
-      setCarregando(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password: novaSenha });
-      if (error) throw error;
-
-      toast.success('Sua senha foi redefinida com sucesso! Faça login novamente.');
-      await supabase.auth.signOut();
-      setViewAuth('login');
-    } catch (error) {
-      toast.error(traduzirErroSupabase(error));
-    } finally {
-      setCarregando(false);
-    }
-  }
-  async function lidarComLogout() {
-    await supabase.auth.signOut();
-    setTransacoes([]);
-    toast.success('Sessão encerrada.');
-  }
-
+  // Função intermediária para chamar o salvamento do Hook passando os dados do estado do componente
   async function salvarLancamento(e) {
     e.preventDefault();
-
-    if (!descricao || !valorMascara || !data) {
-      alert('Por favor, preencha os campos obrigatórios (Descrição, Valor e Data).');
-      return;
-    }
-
-    const valorNumerico = parseMascaraParaNumero(valorMascara);
-    if (isNaN(valorNumerico) || valorNumerico <= 0) {
-      alert('Por favor, insira um valor válido maior que zero.');
-      return;
-    }
-
-    try {
-      let lotesDeTransacoes = [];
-      const [anoBase, mesBase, diaBase] = data.split('-').map(Number);
-
-      const temVencimento = !!dataVencimento;
-      const [anoVencBase, mesVencBase, diaVencBase] = temVencimento
-        ? dataVencimento.split('-').map(Number)
-        : [null, null, null];
-
-      if (editandoId) {
-        if (grupoId) {
-          const { error: erroGrupo } = await supabase
-            .from('transacoes')
-            .update({
-              valor: valorNumerico,
-              categoria,
-              tipo,
-              dados_pagamento: dadosPagamento || null
-            })
-            .eq('grupo_id', grupoId);
-
-          if (erroGrupo) throw erroGrupo;
-
-          // 2. Atualiza os campos individuais APENAS desta parcela específica que você está mexendo
-          const { error: erroIndividual } = await supabase
-            .from('transacoes')
-            .update({
-              descricao,
-              status,
-              data, // Altera a data só DESTA linha
-              data_vencimento: dataVencimento || null // Alvera o vencimento só DESTA linha
-            })
-            .eq('id', editandoId);
-
-          if (erroIndividual) throw erroIndividual;
-        } else {
-          // Registro comum sem grupo (avulso) - atualiza tudo normalmente
-          const { error } = await supabase
-            .from('transacoes')
-            .update({
-              user_id: session.user.id,
-              descricao,
-              valor: valorNumerico,
-              categoria,
-              data,
-              tipo,
-              status,
-              data_vencimento: dataVencimento || null,
-              dados_pagamento: dadosPagamento || null
-            })
-            .eq('id', editandoId);
-
-          if (error) throw error;
-        }
-      }
-      else {
-        // Geramos um ID de grupo único se o utilizador optou por repetir
-        const novoGrupoId = repetir ? crypto.randomUUID() : null;
-
-        if (!repetir) {
-          lotesDeTransacoes.push({
-            user_id: session.user.id,
-            descricao,
-            valor: valorNumerico,
-            categoria,
-            data,
-            tipo,
-            status,
-            data_vencimento: dataVencimento || null,
-            dados_pagamento: dadosPagamento || null,
-            grupo_id: null
-          });
-        }
-        else if (tipoRepeticao === 'parcelado') {
-          for (let i = 1; i <= numeroParcelas; i++) {
-            const dataParcela = new Date(Date.UTC(anoBase, mesBase - 1 + (i - 1), diaBase));
-            const dataString = dataParcela.toISOString().split('T')[0];
-
-            let vencimentoString = null;
-            if (temVencimento) {
-              const dataVencParcela = new Date(Date.UTC(anoVencBase, mesVencBase - 1 + (i - 1), diaVencBase));
-              vencimentoString = dataVencParcela.toISOString().split('T')[0];
-            }
-
-            lotesDeTransacoes.push({
-              user_id: session.user.id,
-              descricao: `${descricao} (${i}/${numeroParcelas})`,
-              valor: valorNumerico,
-              categoria,
-              data: dataString,
-              tipo,
-              status: i === 1 ? status : 'Pendente',
-              data_vencimento: vencimentoString,
-              dados_pagamento: dadosPagamento || null,
-              grupo_id: novoGrupoId // 🌟 Vincula todas ao mesmo grupo
-            });
-          }
-        }
-        else if (tipoRepeticao === 'fixo') {
-          for (let i = 1; i <= 12; i++) {
-            const dataFixa = new Date(Date.UTC(anoBase, mesBase - 1 + (i - 1), diaBase));
-            const dataString = dataFixa.toISOString().split('T')[0];
-
-            let vencimentoString = null;
-            if (temVencimento) {
-              const dataVencFixa = new Date(Date.UTC(anoVencBase, mesVencBase - 1 + (i - 1), diaVencBase));
-              vencimentoString = dataVencFixa.toISOString().split('T')[0];
-            }
-
-            lotesDeTransacoes.push({
-              user_id: session.user.id,
-              descricao: descricao,
-              valor: valorNumerico,
-              categoria,
-              data: dataString,
-              tipo,
-              status: i === 1 ? status : 'Pendente',
-              data_vencimento: vencimentoString,
-              dados_pagamento: dadosPagamento || null,
-              grupo_id: novoGrupoId // 🌟 Vincula todas ao mesmo grupo
-            });
-          }
-        }
-
-        const { error } = await supabase.from('transacoes').insert(lotesDeTransacoes);
-        if (error) throw error;
-      }
-
-      limparFormulario();
-      setIsModalAberto(false);
-      buscarTransacoes();
-      toast.success('Lançamento guardado com sucesso!');
-    } catch (err) {
-      console.error('Erro ao guardar lançamento:', err);
-      alert('Erro ao guardar as informações na base de dados.');
-    }
+    await salvarLancamentoHook({
+      editandoId,
+      grupoId,
+      descricao,
+      valorMascara,
+      categoria,
+      tipo,
+      status,
+      data,
+      dataVencimento,
+      dadosPagamento,
+      repetir,
+      tipoRepeticao,
+      numeroParcelas
+    }, limparFormulario);
   }
 
-  async function ejecutarExclusao() {
+  async function ejecutarExclusao(apagarEmLote) {
     if (!idExclusaoConfirmar) return;
-    try {
-      const { error } = await supabase.from('transacoes').delete().eq('id', idExclusaoConfirmar);
-      if (error) throw error;
-      toast.success('Lançamento removido.');
-      if (editandoId === idExclusaoConfirmar) limparFormulario();
-      buscarTransacoes();
-    } catch (error) {
-      console.error(error);
-      toast.error('Erro ao excluir registro.');
-    } finally {
-      setIdExclusaoConfirmar(null);
-    }
+    // Encontra o item atual para pegar o grupo_id dele se necessário
+    const itemSelecionado = transacoes.find(t => t.id === idExclusaoConfirmar);
+    const grupoIdAlvo = itemSelecionado?.grupo_id || null;
+
+    await excluirTransacao(idExclusaoConfirmar, apagarEmLote, grupoIdAlvo, editandoId, limparFormulario);
+    setIdExclusaoConfirmar(null);
   }
 
   function prepararEdicao(t) {
     setEditandoId(t.id);
-    setGrupoId(t.grupo_id || null); // 🌟 Guarda o ID do grupo, se existir
+    setGrupoId(t.grupo_id || null);
     setData(t.data);
     setDescricao(t.descricao);
     setValorMascara(t.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
@@ -438,159 +150,74 @@ export default function App() {
     setIsModalAberto(true);
   }
 
-  function limparFormulario() {
-    setEditandoId(null);
-    setGrupoId(null); // 🌟 Limpa o grupo
-    setDescricao(''); setValorMascara(''); setCategoria('');
-    setData(new Date().toISOString().split('T')[0]); setTipo('Saída'); setStatus('Pago');
-    setDataVencimento(''); setDadosPagamento(''); setIsModalAberto(false); setRepetir(false);
-    setTipoRepeticao('fixo'); setNumeroParcelas(2);
-  }
-
   const categoriasUnicas = [...new Set(transacoes.map(t => t.categoria))].filter(Boolean);
 
   const transacoesFiltradas = transacoes.filter((t) => {
-    // --- 1. FILTRO DE TEMPO AVANÇADO ---
     if (filtroPeriodo === 'mensal' && filtroCompetencia) {
       const [anoFiltro, mesFiltro] = filtroCompetencia.split('-');
       const dataTransacao = new Date(t.data);
-
-      // ✨ CORREÇÃO AQUI: Mudamos para UTC para ignorar o fuso horário do navegador
-      const anoT = dataTransacao.getUTCFullYear();
-      const mesT = dataTransacao.getUTCMonth() + 1;
-
-      if (anoT !== Number(anoFiltro) || mesT !== Number(mesFiltro)) return false;
-    }
-    else if (filtroPeriodo === '3meses') {
+      if (dataTransacao.getUTCFullYear() !== Number(anoFiltro) || (dataTransacao.getUTCMonth() + 1) !== Number(mesFiltro)) return false;
+    } else if (filtroPeriodo === '3meses') {
       const dataTransacao = new Date(t.data);
       const hoje = new Date();
       const tresMesesAtras = new Date();
       tresMesesAtras.setMonth(hoje.getMonth() - 3);
       if (dataTransacao < tresMesesAtras || dataTransacao > hoje) return false;
+    } else if (filtroPeriodo === 'ano') {
+      if (new Date(t.data).getUTCFullYear() !== new Date().getFullYear()) return false;
     }
-    else if (filtroPeriodo === 'ano') {
-      const dataTransacao = new Date(t.data);
-      const anoAtual = new Date().getFullYear();
-      // ✨ CORREÇÃO AQUI TAMBÉM: Garante o ano correto em UTC
-      if (dataTransacao.getUTCFullYear() !== anoAtual) return false;
-    }
+    if (filtroCategoria && t.categoria !== filtroCategoria) return false;
 
-    // --- 2. FILTRO DE CATEGORIA ---
-    if (filtroCategoria && t.categoria !== filtroCategoria) {
-      return false;
-    }
-
-    // --- 3. FILTROS REMANESCENTES ---
     const texto = buscaTexto ? buscaTexto.toLowerCase() : '';
-    const bateTexto = !texto ||
-      (t.descricao && t.descricao.toLowerCase().includes(texto)) ||
-      (t.categoria && t.categoria.toLowerCase().includes(texto));
-
+    const bateTexto = !texto || (t.descricao?.toLowerCase().includes(texto)) || (t.categoria?.toLowerCase().includes(texto));
     const bateStatus = !filtroStatus || t.status === filtroStatus;
-
     return bateTexto && bateStatus;
   });
 
   const totalPaginas = Math.ceil(transacoesFiltradas.length / itensPorPagina) || 1;
   const transacoesPaginadas = transacoesFiltradas.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
-
   const totalEntradas = transacoesFiltradas.filter(t => t.tipo === 'Entrada').reduce((acc, curr) => acc + curr.valor, 0);
   const totalSaidas = transacoesFiltradas.filter(t => t.tipo === 'Saída').reduce((acc, curr) => acc + curr.valor, 0);
   const saldoAtual = totalEntradas - totalSaidas;
 
   function exportarPDF() {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const azulInstitucional = [37, 99, 235];
-    const cinzaTexto = [100, 116, 139];
-    const fundoCard = [248, 250, 252];
-
     const competenceFormatada = filtroCompetencia ? filtroCompetencia.split('-').reverse().join('/') : 'Geral';
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.textColor = azulInstitucional[0], azulInstitucional[1], azulInstitucional[2];
+    doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.textColor = azulInstitucional[0], azulInstitucional[1], azulInstitucional[2];
     doc.text("GESTOR FINANCEIRO", 14, 20);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.textColor = cinzaTexto[0], cinzaTexto[1], cinzaTexto[2];
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.textColor = 100, 116, 139;
     doc.text(`Relatório de Movimentação Mensal - Período: ${competenceFormatada}`, 14, 26);
     doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 150, 26);
 
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(14, 30, 196, 30);
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5); doc.line(14, 30, 196, 30);
+    doc.setFillColor(248, 250, 252); doc.roundedRect(14, 35, 182, 22, 3, 3, "F");
 
-    doc.setFillColor(fundoCard[0], fundoCard[1], fundoCard[2]);
-    doc.roundedRect(14, 35, 182, 22, 3, 3, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.textColor = 148, 163, 184;
+    doc.text("TOTAL ENTRADAS", 22, 41); doc.text("TOTAL SAÍDAS", 82, 41); doc.text("SALDO DO PERÍODO", 142, 41);
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.textColor = 148, 163, 184;
-    doc.text("TOTAL ENTRADAS", 22, 41);
-    doc.text("TOTAL SAÍDAS", 82, 41);
-    doc.text("SALDO DO PERÍODO", 142, 41);
-
-    doc.setFontSize(12);
-    doc.textColor = 22, 163, 74;
-    doc.text(`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 22, 50);
-
-    doc.textColor = 220, 38, 38;
-    doc.text(`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 82, 50);
-
-    if (saldoAtual >= 0) {
-      doc.textColor = 37, 99, 235;
-    } else {
-      doc.textColor = 234, 88, 12;
-    }
+    doc.setFontSize(12); doc.textColor = 22, 163, 74; doc.text(`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 22, 50);
+    doc.textColor = 220, 38, 38; doc.text(`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 82, 50);
+    doc.textColor = saldoAtual >= 0 ? 37 : 234, saldoAtual >= 0 ? 99 : 88, saldoAtual >= 0 ? 235 : 12;
     doc.text(`R$ ${saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 142, 50);
-
-    const colunasTabela = ["Data Lanc.", "Vencimento", "Descrição", "Categoria", "Valor", "Status"];
 
     const canalLinhas = transacoesFiltradas.map(t => [
       new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR'),
       t.data_vencimento ? new Date(t.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-',
-      t.descricao,
-      t.categoria,
-      `${t.tipo === 'Entrada' ? '+ ' : '- '}R$ ${t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      t.status
+      t.descricao, t.categoria, `${t.tipo === 'Entrada' ? '+ ' : '- '}R$ ${t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, t.status
     ]);
 
     autoTable(doc, {
-      startY: 64,
-      head: [colunasTabela],
-      body: canalLinhas,
-      margin: { left: 14, right: 14 },
-      theme: 'striped',
-      headStyles: {
-        fillColor: azulInstitucional,
-        textColor: [255, 255, 255],
-        fontSize: 9,
-        fontStyle: 'bold',
-        halign: 'left'
-      },
-      bodyStyles: {
-        fontSize: 8.5,
-        textColor: [51, 65, 85]
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252]
-      },
+      startY: 64, head: [["Data Lanc.", "Vencimento", "Descrição", "Categoria", "Valor", "Status"]], body: canalLinhas,
+      margin: { left: 14, right: 14 }, theme: 'striped',
+      headStyles: { fillColor: azulInstitucional, textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold', halign: 'left' },
+      bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85] }, alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: function (data) {
         if (data.section === 'body' && data.column.index === 4) {
           const textoValor = data.cell.raw || '';
-          if (textoValor.startsWith('+')) {
-            data.cell.styles.textColor = [22, 163, 74];
-            data.cell.styles.fontStyle = 'bold';
-          } else if (textoValor.startsWith('-')) {
-            data.cell.styles.textColor = [220, 38, 38];
-            data.cell.styles.fontStyle = 'bold';
-          }
+          data.cell.styles.textColor = textoValor.startsWith('+') ? [22, 163, 74] : [220, 38, 38];
+          data.cell.styles.fontStyle = 'bold';
         }
       }
     });
@@ -603,316 +230,77 @@ export default function App() {
     return (
       <>
         <Toaster position="bottom-right" />
-        <AuthRecovery
-          modo="definir"
-          aoVoltar={async () => {
-            await supabase.auth.signOut();
-            setViewAuth('login');
-          }}
-          aoSubmeter={lidarComNovaSenha}
-        />
+        <AuthRecovery modo="definir" aoVoltar={async () => { await logout(); setViewAuth('login'); }} aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)} />
       </>
     );
   }
 
-  // 2. SEGUNDA PRIORIDADE: Se não houver sessão ativa, controla as telas externas restantes
   if (!session) {
-    if (viewAuth === 'solicitar') {
-      return (
-        <>
-          <Toaster position="bottom-right" />
-          <AuthRecovery
-            modo="solicitar"
-            aoVoltar={() => setViewAuth('login')}
-            aoSubmeter={lidarComSolicitacaoEmail}
-          />
-        </>
-      );
-    }
-
-    // Estrutura Base de Login e Cadastro Externa
     return (
-      <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-200">
-        <Toaster position="bottom-right" />
-
-        <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl shadow-sm border border-gray-200/60 dark:border-zinc-800 overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-130 transition-colors duration-200">
-
-          <div className="hidden md:flex flex-col justify-between p-10 bg-linear-to-br from-blue-600 to-indigo-800 text-white relative overflow-hidden">
-            <div className="absolute inset-0 opacity-5 pointer-events-none">
-              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 150 Q 200 220, 400 110 T 800 200" fill="none" stroke="currentColor" strokeWidth="2" />
-              </svg>
-            </div>
-
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="p-2.5 bg-white/10 rounded-xl border border-white/10">
-                <Wallet className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-sm font-bold tracking-wider uppercase">Gestor Financeiro</span>
-            </div>
-
-            <div className="space-y-3 relative z-10 my-auto">
-              <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
-                Simplifique o controle <br />
-                do seu dinheiro.
-              </h2>
-              <p className="text-xs text-blue-100/80 max-w-sm font-medium leading-relaxed">
-                Uma plataforma direta e intuitiva para você lançar despesas, acompanhar receitas, gerenciar vencimentos e exportar relatórios sem complicação.
-              </p>
-            </div>
-
-            <div className="text-[11px] text-blue-200/50 font-medium relative z-10">
-              Sistema de Controle Interno • Conexão Segura
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-center p-8 md:p-12 bg-white dark:bg-zinc-900 transition-colors duration-200">
-            <div className="w-full max-w-sm mx-auto space-y-6">
-
-              <div className="flex md:hidden items-center gap-2 mb-2">
-                <Wallet className="w-5 h-5 text-blue-500" />
-                <h1 className="text-sm font-bold text-gray-900 dark:text-zinc-100">Gestor Financeiro</h1>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">
-                  {viewAuth === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">
-                  {viewAuth === 'login' ? 'Insira suas credenciais para gerenciar a aplicação.' : 'Preencha os campos abaixo para começar de graça.'}
-                </p>
-              </div>
-
-              <form onSubmit={viewAuth === 'login' ? lidarComLogin : lidarComCadastro} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">E-mail de acesso</label>
-                  <input
-                    type="email"
-                    placeholder="seu@email.com"
-                    required
-                    className="w-full bg-neutral-50/60 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-xs font-medium text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Senha</label>
-                  <div className="relative">
-                    <input
-                      type={mostrarSenha ? "text" : "password"}
-                      placeholder="••••••••"
-                      required
-                      className="w-full bg-neutral-50/60 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs font-medium text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setMostrarSenha(!mostrarSenha)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-
-                  {viewAuth === 'login' && (
-                    <div className="text-right pt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setViewAuth('solicitar');
-                          setEmail('');
-                          setPassword('');
-                        }}
-                        className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-bold transition-all cursor-pointer bg-transparent border-none"
-                      >
-                        Esqueci minha senha
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-blue-600 transition-all shadow-sm shadow-blue-500/10 active:scale-[0.98] mt-2 cursor-pointer"
-                >
-                  {viewAuth === 'login' ? 'Entrar no Sistema' : 'Criar minha Conta'}
-                </button>
-              </form>
-
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewAuth(viewAuth === 'login' ? 'cadastro' : 'login');
-                    setEmail('');
-                    setPassword('');
-                  }}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors bg-transparent border-none cursor-pointer"
-                >
-                  {viewAuth === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Voltar ao Login'}
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-      </div>
+      <LoginScreen
+        viewAuth={viewAuth}
+        setViewAuth={setViewAuth}
+        lidarComLogin={login}
+        lidarComCadastro={cadastro}
+        lidarComSolicitacaoEmail={recuperarSenha}
+      />
     );
   }
 
-  // 3. TERCEIRA PRIORIDADE: Se houver sessão normal e estável, renderiza a Área Interna
   return (
     <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
       <Toaster position="bottom-right" />
-
-      <Sidebar
-        abaAtiva={abaAtiva}
-        setAbaAtiva={setAbaAtiva}
-        lidarComLogout={lidarComLogout}
-        dark={dark}
-        setDark={setDark}
-      />
+      <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={logout} dark={dark} setDark={setDark} />
 
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-
         <div className="flex justify-between items-center min-h-12">
           <div>
             {abaAtiva === 'dashboard' && (
-              <>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Painel de Controle</h2>
-                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Análise visual e estatística consolidada do período selecionado.</p>
-              </>
+              <><h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Painel de Controle</h2><p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Análise visual e estatística consolidada.</p></>
             )}
             {abaAtiva === 'lancamentos' && (
-              <>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Lançamentos</h2>
-                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado e gerenciamento de receitas e despesas.</p>
-              </>
+              <><h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Lançamentos</h2><p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado das transações.</p></>
             )}
             {abaAtiva === 'configuracoes' && (
-              <>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Ajustes</h2>
-                <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Gerencie suas preferências e segurança da conta.</p>
-              </>
+              <><h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Ajustes</h2><p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Gerencie preferências e segurança.</p></>
             )}
           </div>
-
           {abaAtiva === 'lancamentos' && (
-            <button
-              onClick={() => setIsModalAberto(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Novo Lançamento
+            <button onClick={() => setIsModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer">
+              <Plus className="w-4 h-4" /> Novo Lançamento
             </button>
           )}
         </div>
 
         {abaAtiva === 'dashboard' && (
           <>
-            <CompetenceBar
-              filtroCompetencia={filtroCompetencia}
-              setFiltroCompetencia={setFiltroCompetencia}
-              filtroPeriodo={filtroPeriodo}
-              setFiltroPeriodo={setFiltroPeriodo}
-              filtroCategoria={filtroCategoria}
-              setFiltroCategoria={setFiltroCategoria}
-              setPaginaAtual={setPaginaAtual}
-            />
-            <DashboardView
-              totalEntradas={totalEntradas}
-              totalSaidas={totalSaidas}
-              saldoAtual={saldoAtual}
-              transacoesFiltradas={transacoesFiltradas}
-              limites={limites}
-              setLimites={setLimites}
-            />
+            <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+            <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
           </>
         )}
 
         {abaAtiva === 'lancamentos' && (
           <>
-            <CompetenceBar
-              filtroCompetencia={filtroCompetencia}
-              setFiltroCompetencia={setFiltroCompetencia}
-              filtroPeriodo={filtroPeriodo}
-              setFiltroPeriodo={setFiltroPeriodo}
-              filtroCategoria={filtroCategoria}
-              setFiltroCategoria={setFiltroCategoria}
-              setPaginaAtual={setPaginaAtual}
-            />
-            <FilterCenter
-              buscaTexto={buscaTexto}
-              setBuscaTexto={setBuscaTexto}
-              filtroCategoria={filtroCategoria}
-              setFiltroCategoria={setFiltroCategoria}
-              filtroStatus={filtroStatus}
-              setFiltroStatus={setFiltroStatus}
-              categoriasUnicas={categoriasUnicas}
-              setPaginaAtual={setPaginaAtual}
-            />
-            <TransactionTable
-              carregando={carregando}
-              transacoesPaginadas={transacoesPaginadas}
-              totalPaginas={totalPaginas}
-              paginaAtual={paginaAtual}
-              setPaginaAtual={setPaginaAtual}
-              setIsModalAberto={setIsModalAberto}
-              exportarPDF={exportarPDF}
-              prepararEdicao={prepararEdicao}
-              setIdExclusaoConfirmar={setIdExclusaoConfirmar}
-            />
+            <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+            <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
+            <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
           </>
         )}
-        {abaAtiva === 'configuracoes' && (
-          <Configuracoes session={session} onLogout={lidarComLogout} />
-        )}
+
+        {abaAtiva === 'configuracoes' && <Configuracoes session={session} onLogout={logout} />}
       </main>
 
       {isModalAberto && (
-        <TransactionModal
-          editandoId={editandoId}
-          limparFormulario={limparFormulario}
-          salvarLancamento={salvarLancamento}
-          data={data}
-          setData={setData}
-          dataVencimento={dataVencimento}
-          setDataVencimento={setDataVencimento}
-          descricao={descricao}
-          setDescricao={setDescricao}
-          dadosPagamento={dadosPagamento}
-          setDadosPagamento={setDadosPagamento}
-          valorMascara={valorMascara}
-          setValorMascara={setValorMascara}
-          category={categoria}
-          setCategoria={setCategoria}
-          tipo={tipo}
-          setTipo={setTipo}
-          status={status}
-          setStatus={setStatus}
-          repetir={repetir}
-          setRepetir={setRepetir}
-          tipoRepeticao={tipoRepeticao}
-          setTipoRepeticao={setTipoRepeticao}
-          numeroParcelas={numeroParcelas}
-          setNumeroParcelas={setNumeroParcelas}
-        />
+        <TransactionModal editandoId={editandoId} limparFormulario={limparFormulario} salvarLancamento={salvarLancamento} data={data} setData={setData} dataVencimento={dataVencimento} setDataVencimento={setDataVencimento} descricao={descricao} setDescricao={setDescricao} dadosPagamento={dadosPagamento} setDadosPagamento={setDadosPagamento} valorMascara={valorMascara} setValorMascara={setValorMascara} category={categoria} setCategoria={setCategoria} tipo={tipo} setTipo={setTipo} status={status} setStatus={setStatus} repetir={repetir} setRepetir={setRepetir} tipoRepeticao={tipoRepeticao} setTipoRepeticao={setTipoRepeticao} numeroParcelas={numeroParcelas} setNumeroParcelas={setNumeroParcelas} />
       )}
-
       {idExclusaoConfirmar && (
         <DeleteModal
+          grupoId={transacoes.find(t => t.id === idExclusaoConfirmar)?.grupo_id}
           setIdExclusaoConfirmar={setIdExclusaoConfirmar}
           ejecutarExclusao={ejecutarExclusao}
         />
       )}
-      <ChatIA
-        transacoes={transacoesFiltradas}
-        saldoAtual={saldoAtual}
-      />
-
+      <ChatIA transacoes={transacoesFiltradas} saldoAtual={saldoAtual} />
     </div>
   );
 }
