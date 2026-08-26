@@ -22,7 +22,7 @@ import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
 
 export default function App() {
-  const { session, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
+  const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,12 +65,10 @@ export default function App() {
     }
   }, [dark]);
 
-  // 🌟 CORREÇÃO DO LOOP: Redirecionamento seguro via useEffect
   useEffect(() => {
     const gerenciarSessao = async () => {
       if (session?.user?.id) {
         await buscarTransacoes();
-        // Se estiver na raiz e logado, vai para o dashboard de forma controlada
         if (location.pathname === '/') {
           navigate('/dashboard', { replace: true });
         }
@@ -243,6 +241,18 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
+  // 🌟 Se ainda estiver a carregar a sessão do Supabase, mostra um loader limpo
+  if (carregandoSessao) {
+    return (
+      <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs text-neutral-500 font-medium">A carregar o FinancePlus...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Se estiver no fluxo de redefinição de palavra-passe
   if (viewAuth === 'definir') {
     return (
@@ -258,7 +268,7 @@ export default function App() {
       <Toaster position="bottom-right" />
 
       <Routes>
-        {/* Rota Pública (Login / Cadastro) limpa de loops */}
+        {/* Rota Pública (Login / Cadastro) */}
         <Route 
           path="/" 
           element={

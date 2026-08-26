@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 export function useAuth() {
   const [session, setSession] = useState(null);
+  const [carregandoSessao, setCarregandoSessao] = useState(true);
   
   const [viewAuth, setViewAuth] = useState(() => {
     if (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) {
@@ -15,12 +16,15 @@ export function useAuth() {
   });
 
   useEffect(() => {
+    // Verifica a sessão atual ao carregar a página
     supabase.auth.getSession().then(({ data: { session: sessaoInicial } }) => {
       setSession(sessaoInicial);
+      setCarregandoSessao(false); // Terminou a verificação inicial
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessaoNova) => {
       setSession(sessaoNova);
+      setCarregandoSessao(false);
       if (event === 'PASSWORD_RECOVERY') {
         setViewAuth('definir');
       }
@@ -116,5 +120,5 @@ export function useAuth() {
     toast.success('Sessão encerrada.');
   };
 
-  return { session, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout };
+  return { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout };
 }
