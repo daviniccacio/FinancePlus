@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -165,35 +165,48 @@ export default function App() {
     setIsModalAberto(true);
   }
 
-  const categoriasUnicas = [...new Set(transacoes.map(t => t.categoria))].filter(Boolean);
+  const categoriasUnicas = useMemo(() => {
+    return [...new Set(transacoes.map(t => t.categoria))].filter(Boolean);
+  }, [transacoes]);
 
-  const transacoesFiltradas = transacoes.filter((t) => {
-    if (filtroPeriodo === 'mensal' && filtroCompetencia) {
-      const [anoFiltro, mesFiltro] = filtroCompetencia.split('-');
-      const dataTransacao = new Date(t.data);
-      if (dataTransacao.getUTCFullYear() !== Number(anoFiltro) || (dataTransacao.getUTCMonth() + 1) !== Number(mesFiltro)) return false;
-    } else if (filtroPeriodo === '3meses') {
-      const dataTransacao = new Date(t.data);
-      const hoje = new Date();
-      const tresMesesAtras = new Date();
-      tresMesesAtras.setMonth(hoje.getMonth() - 3);
-      if (dataTransacao < tresMesesAtras || dataTransacao > hoje) return false;
-    } else if (filtroPeriodo === 'ano') {
-      if (new Date(t.data).getUTCFullYear() !== new Date().getFullYear()) return false;
-    }
-    if (filtroCategoria && t.categoria !== filtroCategoria) return false;
-    
-    const texto = buscaTexto ? buscaTexto.toLowerCase() : '';
-    const bateTexto = !texto || (t.descricao?.toLowerCase().includes(texto)) || (t.categoria?.toLowerCase().includes(texto));
-    const bateStatus = !filtroStatus || t.status === filtroStatus;
-    return bateTexto && bateStatus;
-  });
+  // 🌟 OTIMIZAÇÃO: Filtragem memoizada
+  const transacoesFiltradas = useMemo(() => {
+    return transacoes.filter((t) => {
+      if (filtroPeriodo === 'mensal' && filtroCompetencia) {
+        const [anoFiltro, mesFiltro] = filtroCompetencia.split('-');
+        const dataTransacao = new Date(t.data);
+        if (dataTransacao.getUTCFullYear() !== Number(anoFiltro) || (dataTransacao.getUTCMonth() + 1) !== Number(mesFiltro)) return false;
+      } else if (filtroPeriodo === '3meses') {
+        const dataTransacao = new Date(t.data);
+        const hoje = new Date();
+        const tresMesesAtras = new Date();
+        tresMesesAtras.setMonth(hoje.getMonth() - 3);
+        if (dataTransacao < tresMesesAtras || dataTransacao > hoje) return false;
+      } else if (filtroPeriodo === 'ano') {
+        if (new Date(t.data).getUTCFullYear() !== new Date().getFullYear()) return false;
+      }
+      if (filtroCategoria && t.categoria !== filtroCategoria) return false;
+      
+      const texto = buscaTexto ? buscaTexto.toLowerCase() : '';
+      const bateTexto = !texto || (t.descricao?.toLowerCase().includes(texto)) || (t.categoria?.toLowerCase().includes(texto));
+      const bateStatus = !filtroStatus || t.status === filtroStatus;
+      return bateTexto && bateStatus;
+    });
+  }, [transacoes, filtroPeriodo, filtroCompetencia, filtroCategoria, buscaTexto, filtroStatus]);
+
+  // 🌟 OTIMIZAÇÃO: Cálculos de Totais memoizados
+  const { totalEntradas, totalSaidas, saldoAtual } = useMemo(() => {
+    const entradas = transacoesFiltradas.filter(t => t.tipo === 'Entrada').reduce((acc, curr) => acc + curr.valor, 0);
+    const saidas = transacoesFiltradas.filter(t => t.tipo === 'Saída').reduce((acc, curr) => acc + curr.valor, 0);
+    return {
+      totalEntradas: entradas,
+      totalSaidas: saidas,
+      saldoAtual: entradas - saidas
+    };
+  }, [transacoesFiltradas]);
 
   const totalPaginas = Math.ceil(transacoesFiltradas.length / itensPorPagina) || 1;
   const transacoesPaginadas = transacoesFiltradas.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
-  const totalEntradas = transacoesFiltradas.filter(t => t.tipo === 'Entrada').reduce((acc, curr) => acc + curr.valor, 0);
-  const totalSaidas = transacoesFiltradas.filter(t => t.tipo === 'Saída').reduce((acc, curr) => acc + curr.valor, 0);
-  const saldoAtual = totalEntradas - totalSaidas;
 
   function exportarPDF() {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -241,7 +254,7 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
-  // 🌟 Se ainda estiver a carregar a sessão do Supabase, mostra um loader limpo
+  // Loader de verificação inicial de sessão
   if (carregandoSessao) {
     return (
       <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center">
@@ -253,11 +266,22 @@ export default function App() {
     );
   }
 
-  // Se estiver no fluxo de redefinição de palavra-passe
+  // Tela de Redefinição de Senha
   if (viewAuth === 'definir') {
     return (
       <>
-        <Toaster position="bottom-right" />
+        <Toaster 
+          position="bottom-right" 
+          toastOptions={{
+            style: {
+              background: dark ? '#18181b' : '#ffffff',
+              color: dark ? '#f4f4f5' : '#18181b',
+              border: dark ? '1px solid #27272a' : '1px solid #e4e4e7',
+              fontSize: '12px',
+              borderRadius: '12px',
+            },
+          }} 
+        />
         <AuthRecovery modo="definir" aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/'); }} aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)} />
       </>
     );
@@ -265,7 +289,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
-      <Toaster position="bottom-right" />
+      
+      {/* 🌟 Toaster Dinâmico com Tema Claro e Escuro */}
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{
+          style: {
+            background: dark ? '#18181b' : '#ffffff',
+            color: dark ? '#f4f4f5' : '#18181b',
+            border: dark ? '1px solid #27272a' : '1px solid #e4e4e7',
+            fontSize: '12px',
+            borderRadius: '12px',
+          },
+        }} 
+      />
 
       <Routes>
         {/* Rota Pública (Login / Cadastro) */}
@@ -285,7 +322,7 @@ export default function App() {
           } 
         />
 
-        {/* Rotas Protegidas (Exigem autenticação) */}
+        {/* Rotas Protegidas */}
         <Route 
           path="/dashboard" 
           element={
