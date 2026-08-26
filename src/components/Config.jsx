@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { User, Shield, Info, Code, FileText, Lock, Download, Trash2, RefreshCw } from 'lucide-react';
+// src/components/Config.jsx
+import { useState, useEffect } from 'react';
+import { User, Shield, Info, Code, FileText, Lock, Download, Trash2, RefreshCw, Upload, Bell, DollarSign, CheckCircle } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { jsPDF } from 'jspdf';
 import ExcelJS from 'exceljs';
@@ -7,14 +8,33 @@ import toast from 'react-hot-toast';
 
 export default function Configuracoes({ session, onLogout }) {
   const [abaAtiva, setAbaAtiva] = useState('ajustes');
+  
+  // Estados de Perfil
+  const [nomeUsuario, setNomeUsuario] = useState(session?.user?.user_metadata?.full_name || '');
+  const [carregandoPerfil, setCarregandoPerfil] = useState(false);
+
+  // Estados de Senha
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [carregandoSenha, setCarregandoSenha] = useState(false);
+
+  // Estados de Exportação / Importação
   const [formatoExport, setFormatoExport] = useState('excel');
   const [carregandoExport, setCarregandoExport] = useState(false);
+  const [carregandoImport, setCarregandoImport] = useState(false);
   const [carregandoReset, setCarregandoReset] = useState(false);
 
-  // Função auxiliar para formatar a data com segurança (DD/MM/AAAA)
+  // Estados de Preferências
+  const [moedaPadrao, setMoedaPadrao] = useState('BRL');
+  const [notificarVencimentos, setNotificarVencimentos] = useState(true);
+
+  useEffect(() => {
+    if (session?.user?.user_metadata?.full_name) {
+      setNomeUsuario(session.user.user_metadata.full_name);
+    }
+  }, [session]);
+
+  // Auxiliar de Formatação de Data
   const formatarDataSegura = (dataInput) => {
     if (!dataInput) return '';
     const apenasData = dataInput.split('T')[0];
@@ -26,7 +46,25 @@ export default function Configuracoes({ session, onLogout }) {
     return dataInput;
   };
 
-  // 1. Alteração de Senha do Usuário
+  // 1. Atualizar Nome do Usuário no Supabase Metadata
+  const lidarComAtualizacaoPerfil = async (e) => {
+    e.preventDefault();
+    try {
+      setCarregandoPerfil(true);
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: nomeUsuario }
+      });
+      if (error) throw error;
+      toast.success('Perfil atualizado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao atualizar perfil: ' + error.message);
+    } finally {
+      setCarregandoPerfil(false);
+    }
+  };
+
+  // 2. Alteração de Senha do Usuário
   const lidarComAlteracaoSenha = async (e) => {
     e.preventDefault();
     if (novaSenha !== confirmarSenha) {
@@ -52,9 +90,7 @@ export default function Configuracoes({ session, onLogout }) {
     }
   };
 
-  // 2. Funções Internas de Geração de Arquivos
-
-  // A. Cópia de Segurança em JSON
+  // 3. Exportação de Dados
   const baixarJSON = (transacoes) => {
     const dadosJsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transacoes, null, 2));
     const link = document.createElement('a');
@@ -65,15 +101,11 @@ export default function Configuracoes({ session, onLogout }) {
     link.remove();
   };
 
-  // B. Planilha Excel Contábil Nativa (.xlsx)
   const baixarExcelContabil = async (transacoes) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Extrato Financeiro');
-
-    // Ativa a exibição das linhas de grade nativas do Excel
     worksheet.views = [{ showGridLines: true }];
 
-    // Configuração das colunas principais
     worksheet.columns = [
       { header: 'Data', key: 'data', width: 15 },
       { header: 'Descrição', key: 'descricao', width: 32 },
@@ -82,7 +114,6 @@ export default function Configuracoes({ session, onLogout }) {
       { header: 'Valor Contábil', key: 'valor', width: 22 }
     ];
 
-    // Estilo do cabeçalho principal (Azul Profissional)
     const linhaCabecalho = worksheet.getRow(1);
     linhaCabecalho.height = 26;
     linhaCabecalho.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFF' } };
@@ -90,16 +121,15 @@ export default function Configuracoes({ session, onLogout }) {
     linhaCabecalho.alignment = { vertical: 'middle', horizontal: 'left' };
     linhaCabecalho.getCell('valor').alignment = { vertical: 'middle', horizontal: 'right' };
 
-    // Máscara contábil oficial (Padrão internacional para Real R$)
     const mascaraContabil = '_("R$"* #,##0.00_);[Red]_("R$"* (#,##0.00);_("R$"* "-"_);_(@_)';
-    // Alimentação das linhas de dados
+    
     transacoes.forEach((t) => {
       const tipoTratado = String(t.tipo || '').toLowerCase().trim();
       const ehReceita = tipoTratado === 'receita' || tipoTratado === 'entrada' || tipoTratado === 'ganho';
 
       let valorFinal = Number(t.valor) || 0;
       if (!ehReceita && valorFinal > 0) {
-        valorFinal = -valorFinal; // Mantém a despesa negativa para o balanço contábil
+        valorFinal = -valorFinal;
       }
 
       const novaLinha = worksheet.addRow({
@@ -118,69 +148,13 @@ export default function Configuracoes({ session, onLogout }) {
       celulaValor.alignment = { vertical: 'middle', horizontal: 'right' };
 
       const celulaTipo = novaLinha.getCell('tipo');
-      if (ehReceita) {
-        celulaTipo.font = { color: { argb: '10B981' }, bold: true, name: 'Segoe UI' };
-      } else {
-        celulaTipo.font = { color: { argb: 'EF4444' }, bold: true, name: 'Segoe UI' };
-      }
+      celulaTipo.font = { color: { argb: ehReceita ? '10B981' : 'EF4444' }, bold: true, name: 'Segoe UI' };
 
       novaLinha.eachCell((cell) => {
         cell.border = { bottom: { style: 'thin', color: { argb: 'F3F4F6' } } };
       });
     });
 
-    // ==========================================
-    // NOVA MINI TABELA DE RESUMO (DASHBOARD)
-    // ==========================================
-    const totalRegistros = transacoes.length;
-    const ultimaLinhaDados = totalRegistros + 1; // A linha 1 é o cabeçalho
-
-    // 1. Indicador de Total de Entradas
-    const linhaEntradas = worksheet.getRow(ultimaLinhaDados + 3); // Pula 2 linhas para dar espaçamento
-    linhaEntradas.height = 20;
-    linhaEntradas.getCell('categoria').value = 'Total Entradas (+):';
-    linhaEntradas.getCell('categoria').font = { bold: true, name: 'Segoe UI', size: 10, color: { argb: '10B981' } };
-    linhaEntradas.getCell('categoria').alignment = { horizontal: 'right', vertical: 'middle' };
-
-    const celulaEntradas = linhaEntradas.getCell('valor');
-    celulaEntradas.value = { formula: `SUMIF(D2:D${ultimaLinhaDados}, "Receita", E2:E${ultimaLinhaDados})` };
-    celulaEntradas.font = { bold: true, name: 'Segoe UI', size: 10, color: { argb: '10B981' } };
-    celulaEntradas.numberFormat = mascaraContabil;
-    celulaEntradas.alignment = { horizontal: 'right', vertical: 'middle' };
-
-    // 2. Indicador de Total de Saídas
-    const linhaSaidas = worksheet.getRow(ultimaLinhaDados + 4);
-    linhaSaidas.height = 20;
-    linhaSaidas.getCell('categoria').value = 'Total Saídas (-):';
-    linhaSaidas.getCell('categoria').font = { bold: true, name: 'Segoe UI', size: 10, color: { argb: 'EF4444' } };
-    linhaSaidas.getCell('categoria').alignment = { horizontal: 'right', vertical: 'middle' };
-
-    const celulaSaidas = linhaSaidas.getCell('valor');
-    celulaSaidas.value = { formula: `SUMIF(D2:D${ultimaLinhaDados}, "Despesa", E2:E${ultimaLinhaDados})` };
-    celulaSaidas.font = { bold: true, name: 'Segoe UI', size: 10, color: { argb: 'EF4444' } };
-    celulaSaidas.numberFormat = mascaraContabil;
-    celulaSaidas.alignment = { horizontal: 'right', vertical: 'middle' };
-
-    // 3. Indicador de Saldo Líquido Final
-    const linhaSaldoGeral = worksheet.getRow(ultimaLinhaDados + 5);
-    linhaSaldoGeral.height = 24;
-    linhaSaldoGeral.getCell('categoria').value = 'Saldo Líquido Final:';
-    linhaSaldoGeral.getCell('categoria').font = { bold: true, name: 'Segoe UI', size: 11 };
-    linhaSaldoGeral.getCell('categoria').alignment = { horizontal: 'right', vertical: 'middle' };
-
-    const celulaSaldoGeral = linhaSaldoGeral.getCell('valor');
-    celulaSaldoGeral.value = { formula: `SUM(E2:E${ultimaLinhaDados})` };
-    celulaSaldoGeral.font = { bold: true, name: 'Segoe UI', size: 11 };
-    celulaSaldoGeral.numberFormat = mascaraContabil;
-    celulaSaldoGeral.alignment = { horizontal: 'right', vertical: 'middle' };
-
-    // Aplicação da borda dupla contábil clássica apenas no Saldo Final
-    celulaSaldoGeral.border = {
-      top: { style: 'thin', color: { argb: '000000' } },
-      bottom: { style: 'double', color: { argb: '000000' } }
-    };
-
-    // Execução do download do arquivo modificado
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob);
@@ -193,7 +167,6 @@ export default function Configuracoes({ session, onLogout }) {
     URL.revokeObjectURL(url);
   };
 
-  // C. Documento Imprimível PDF
   const baixarPDF = (transacoes) => {
     const doc = new jsPDF();
     doc.setFont("helvetica", "bold");
@@ -231,21 +204,14 @@ export default function Configuracoes({ session, onLogout }) {
 
       const dataFormatada = formatarDataSegura(t.data);
       const valorFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valor);
+      const ehReceita = t.tipo === 'Entrada';
 
-      const tipoTratado = String(t.tipo || '').toLowerCase().trim();
-      const ehReceita = tipoTratado === 'receita' || tipoTratado === 'entrada' || tipoTratado === 'ganho';
-      const tipoFormatado = ehReceita ? 'Receita' : 'Despesa';
-
-      if (ehReceita) {
-        doc.setTextColor(16, 185, 129);
-      } else {
-        doc.setTextColor(239, 68, 68);
-      }
+      doc.setTextColor(ehReceita ? 16 : 239, ehReceita ? 185 : 68, ehReceita ? 129 : 68);
 
       doc.text(dataFormatada, 14, y);
       doc.text(t.descricao || '-', 40, y);
       doc.text(t.categoria || '-', 100, y);
-      doc.text(tipoFormatado, 150, y);
+      doc.text(ehReceita ? 'Receita' : 'Despesa', 150, y);
       doc.text(valorFormatado, 175, y);
       y += 7;
     });
@@ -253,7 +219,6 @@ export default function Configuracoes({ session, onLogout }) {
     doc.save(`financeplus_relatorio_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  // 3. Função Centralizadora de Execução (CORRIGIDA COM ASYNC)
   const exportarDadosFinanceiros = async () => {
     if (!session?.user?.id) return;
     try {
@@ -270,15 +235,11 @@ export default function Configuracoes({ session, onLogout }) {
         return;
       }
 
-      if (formatoExport === 'json') {
-        baixarJSON(data);
-      } else if (formatoExport === 'excel') {
-        await baixarExcelContabil(data);
-      } else if (formatoExport === 'pdf') {
-        baixarPDF(data);
-      }
+      if (formatoExport === 'json') baixarJSON(data);
+      else if (formatoExport === 'excel') await baixarExcelContabil(data);
+      else if (formatoExport === 'pdf') baixarPDF(data);
 
-      toast.success(`Ficheiro descarregado com sucesso!`);
+      toast.success(`Exportação concluída com sucesso!`);
     } catch (error) {
       console.error(error);
       toast.error('Erro ao exportar dados.');
@@ -287,21 +248,61 @@ export default function Configuracoes({ session, onLogout }) {
     }
   };
 
-  // 4. Reset Completo do Histórico
+  // 4. Funcionalidade de Importar Backup (JSON)
+  const importarBackupJSON = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evento) => {
+      try {
+        setCarregandoImport(true);
+        const transacoesImportadas = JSON.parse(evento.target.result);
+
+        if (!Array.isArray(transacoesImportadas)) {
+          toast.error('O ficheiro selecionado não tem um formato JSON válido.');
+          return;
+        }
+
+        // Mapeia os dados garantindo o ID do utilizador atual
+        const dadosFormatados = transacoesImportadas.map(t => ({
+          user_id: session.user.id,
+          descricao: t.descricao,
+          valor: t.valor,
+          categoria: t.categoria,
+          tipo: t.tipo,
+          status: t.status || 'Pago',
+          data: t.data,
+          data_vencimento: t.data_vencimento || null,
+          dados_pagamento: t.dados_pagamento || null
+        }));
+
+        const { error } = await supabase.from('transacoes').insert(dadosFormatados);
+        if (error) throw error;
+
+        toast.success(`${dadosFormatados.length} lançamentos importados com sucesso!`);
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (error) {
+        console.error(error);
+        toast.error('Erro ao ler e importar o ficheiro de backup.');
+      } finally {
+        setCarregandoImport(false);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // 5. Reset do Histórico
   const resetarDadosConta = async () => {
     const confirmou = window.confirm(
-      "ATENÇÃO: Tens a certeza absoluta de que desejas APAGAR permanentemente todas as tuas transações e metas? Esta ação não pode ser desfeita."
+      "ATENÇÃO: Tens a certeza absoluta de que desejas APAGAR permanentemente todas as tuas transações? Esta ação não pode ser desfeita."
     );
     if (!confirmou) return;
     try {
       setCarregandoReset(true);
       const uid = session?.user?.id;
-      const exclusaoTransacoes = supabase.from('transacoes').delete().eq('user_id', uid);
-      const exclusaoMetas = supabase.from('metas').delete().eq('user_id', uid);
-      const [resTransacoes, resMetas] = await Promise.all([exclusaoTransacoes, exclusaoMetas]);
-
-      if (resTransacoes.error) throw resTransacoes.error;
-      if (resMetas.error) throw resMetas.error;
+      const { error } = await supabase.from('transacoes').delete().eq('user_id', uid);
+      if (error) throw error;
 
       toast.success('Todos os teus dados financeiros foram limpos!');
       setTimeout(() => window.location.reload(), 1500);
@@ -319,27 +320,42 @@ export default function Configuracoes({ session, onLogout }) {
       {/* Cabeçalho */}
       <div className="border-b border-gray-200 dark:border-zinc-800 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">Configurações do Sistema</h1>
-        <p className="text-sm text-gray-500 dark:text-zinc-400">Gerencie sua conta e conheça mais sobre o FinancePlus.</p>
+        <p className="text-sm text-gray-500 dark:text-zinc-400">Gerencie sua conta, preferências e dados locais do FinancePlus.</p>
       </div>
 
       {/* Navegação por Abas */}
-      <div className="flex space-x-4 mb-6 border-b border-gray-100 dark:border-zinc-800 pb-2">
+      <div className="flex space-x-2 md:space-x-4 mb-6 border-b border-gray-100 dark:border-zinc-800 pb-2">
         <button
           onClick={() => setAbaAtiva('ajustes')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${abaAtiva === 'ajustes'
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-            : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+            abaAtiva === 'ajustes'
+              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+              : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+          }`}
         >
           <User size={18} />
           Minha Conta
         </button>
+
+        <button
+          onClick={() => setAbaAtiva('preferencias')}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+            abaAtiva === 'preferencias'
+              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+              : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+          }`}
+        >
+          <Bell size={18} />
+          Preferências
+        </button>
+
         <button
           onClick={() => setAbaAtiva('sobre')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${abaAtiva === 'sobre'
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-            : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+            abaAtiva === 'sobre'
+              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+              : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+          }`}
         >
           <Info size={18} />
           Sobre o Projeto
@@ -347,53 +363,72 @@ export default function Configuracoes({ session, onLogout }) {
       </div>
 
       <div className="space-y-6">
+        
+        {/* ABA 1: MINHA CONTA */}
         {abaAtiva === 'ajustes' && (
           <div className="space-y-6">
 
-            {/* Informações da Conta */}
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            {/* Informações Pessoais & Nome */}
+            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
+              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                 <Shield size={18} className="text-blue-500" />
-                Segurança e Identificação
+                Perfil do Utilizador
               </h3>
-              <div className="space-y-2">
+
+              <form onSubmit={lidarComAtualizacaoPerfil} className="flex flex-col sm:flex-row items-end gap-3 max-w-xl">
+                <div className="w-full space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-zinc-300">Nome de Exibição</label>
+                  <input
+                    type="text"
+                    placeholder="Seu Nome Completo"
+                    value={nomeUsuario}
+                    onChange={(e) => setNomeUsuario(e.target.value)}
+                    className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={carregandoPerfil}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {carregandoPerfil ? 'A guardar...' : 'Salvar Nome'}
+                </button>
+              </form>
+
+              <div className="pt-2 border-t border-gray-200/60 dark:border-zinc-800 space-y-1">
                 <p className="text-xs text-gray-600 dark:text-zinc-300">
-                  <span className="font-semibold text-gray-400 dark:text-zinc-500">E-mail conectado:</span> {session?.user?.email || 'usuario@email.com'}
+                  <span className="font-semibold text-gray-400 dark:text-zinc-500">E-mail conectado:</span> {session?.user?.email}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-zinc-300">
-                  <span className="font-semibold text-gray-400 dark:text-zinc-500">ID do Usuário:</span> <code className="bg-gray-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono">{session?.user?.id || 'id-exemplo'}</code>
+                  <span className="font-semibold text-gray-400 dark:text-zinc-500">ID de Segurança:</span> <code className="bg-gray-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono">{session?.user?.id}</code>
                 </p>
               </div>
             </div>
 
-            {/* Painel de Alteração de Senha */}
+            {/* Alteração de Senha */}
             <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800">
               <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Lock size={18} className="text-blue-500" />
                 Alterar Senha de Acesso
               </h3>
               <form onSubmit={lidarComAlteracaoSenha} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
-                <div className="flex flex-col space-y-1">
-                  <input
-                    type="password"
-                    placeholder="Nova senha (mín. 6 dígitos)"
-                    required
-                    value={novaSenha}
-                    onChange={(e) => setNovaSenha(e.target.value)}
-                    className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="flex flex-col space-y-1">
-                  <input
-                    type="password"
-                    placeholder="Confirme a nova senha"
-                    required
-                    value={confirmarSenha}
-                    onChange={(e) => setConfirmarSenha(e.target.value)}
-                    className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="sm:col-span-2 flex justify-start">
+                <input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 dígitos)"
+                  required
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirme a nova senha"
+                  required
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                />
+                <div className="sm:col-span-2 flex justify-start pt-1">
                   <button
                     type="submit"
                     disabled={carregandoSenha}
@@ -406,45 +441,60 @@ export default function Configuracoes({ session, onLogout }) {
               </form>
             </div>
 
-            {/* Configuração de Portabilidade */}
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            {/* Portabilidade & Importação */}
+            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
+              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                 <Download size={18} className="text-blue-500" />
-                Portabilidade de Dados
+                Portabilidade e Backup
               </h3>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mb-4">
-                Selecione o formato desejado e faça o download de todas as suas transações para o seu dispositivo local.
-              </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 max-w-md">
-                <select
-                  value={formatoExport}
-                  onChange={(e) => setFormatoExport(e.target.value)}
-                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 cursor-pointer"
-                >
-                  <option value="excel">Planilha Formatada Contábil (.xlsx)</option>
-                  <option value="pdf">Documento Imprimível (.pdf)</option>
-                  <option value="json">Cópia de Segurança (.json)</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Exportar */}
+                <div className="space-y-2 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700/60">
+                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Exportar Dados</h4>
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={formatoExport}
+                      onChange={(e) => setFormatoExport(e.target.value)}
+                      className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none"
+                    >
+                      <option value="excel">Planilha Contábil (.xlsx)</option>
+                      <option value="pdf">Documento PDF (.pdf)</option>
+                      <option value="json">Cópia de Segurança (.json)</option>
+                    </select>
 
-                <button
-                  onClick={exportarDadosFinanceiros}
-                  disabled={carregandoExport}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Download size={14} />
-                  {carregandoExport ? 'Exportando...' : 'Exportar Dados'}
-                </button>
+                    <button
+                      onClick={exportarDadosFinanceiros}
+                      disabled={carregandoExport}
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Download size={14} />
+                      {carregandoExport ? 'A exportar...' : 'Descarregar'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Importar */}
+                <div className="space-y-2 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700/60">
+                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Restaurar Backup (.json)</h4>
+                  <p className="text-[10px] text-gray-400">Importe transações salvas de outro arquivo JSON do FinancePlus.</p>
+                  
+                  <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer">
+                    <Upload size={14} />
+                    {carregandoImport ? 'Importando...' : 'Selecionar Ficheiro'}
+                    <input type="file" accept=".json" onChange={importarBackupJSON} className="hidden" disabled={carregandoImport} />
+                  </label>
+                </div>
               </div>
             </div>
 
-            {/* Zona de Risco e Desconexão */}
+            {/* Zona de Risco */}
             <div className="p-4 border border-red-100 dark:border-red-900/30 rounded-xl bg-red-50/30 dark:bg-red-950/10 space-y-3">
               <h3 className="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Zona de Perigo</h3>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-b border-red-100/50 dark:border-red-900/20 pb-3">
                 <div>
                   <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Resetar Dados Financeiros</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Apaga permanentemente o histórico de lançamentos e metas sem excluir o perfil de acesso.</p>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Apaga permanentemente todo o histórico de lançamentos sem excluir o seu perfil.</p>
                 </div>
                 <button
                   onClick={resetarDadosConta}
@@ -459,7 +509,7 @@ export default function Configuracoes({ session, onLogout }) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 <div>
                   <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Desconexão Protegida</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Encerra de forma segura a sua sessão activa neste dispositivo.</p>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Encerra de forma segura a sua sessão ativa neste dispositivo.</p>
                 </div>
                 <button
                   onClick={onLogout}
@@ -473,11 +523,64 @@ export default function Configuracoes({ session, onLogout }) {
           </div>
         )}
 
+        {/* ABA 2: PREFERÊNCIAS */}
+        {abaAtiva === 'preferencias' && (
+          <div className="space-y-6">
+            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
+              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                <DollarSign size={18} className="text-blue-500" />
+                Formato Monetário
+              </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Moeda Padrão da Aplicação</h4>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Define o símbolo monetário exibido nos relatórios e tabelas.</p>
+                </div>
+                <select
+                  value={moedaPadrao}
+                  onChange={(e) => {
+                    setMoedaPadrao(e.target.value);
+                    toast.success('Formato monetário atualizado!');
+                  }}
+                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none"
+                >
+                  <option value="BRL">Real Brasileiro (R$)</option>
+                  <option value="USD">Dólar Americano ($)</option>
+                  <option value="EUR">Euro (€)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
+              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                <Bell size={18} className="text-blue-500" />
+                Lembretes do Sistema
+              </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Notificação de Contas a Vencer</h4>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Exibe alertas na barra superior para lançamentos próximos do vencimento.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificarVencimentos}
+                  onChange={(e) => {
+                    setNotificarVencimentos(e.target.checked);
+                    toast.success('Preferência de notificação salva!');
+                  }}
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ABA 3: SOBRE O PROJETO */}
         {abaAtiva === 'sobre' && (
           <div className="space-y-6 text-gray-600 dark:text-zinc-300">
             <div className="text-center py-4">
               <h2 className="text-3xl font-black text-blue-600 dark:text-blue-400">FinancePlus</h2>
-              <p className="text-sm font-semibold text-gray-400 mt-1">Versão 1.5.0</p>
+              <p className="text-sm font-semibold text-gray-400 mt-1">Versão 1.6.0</p>
               <p className="mt-4 max-w-xl mx-auto text-sm leading-relaxed">
                 Uma aplicação moderna de controle financeiro desenvolvida para oferecer autonomia, clareza visual e inteligência na gestão de receitas e despesas.
               </p>
@@ -507,10 +610,11 @@ export default function Configuracoes({ session, onLogout }) {
               </div>
             </div>
             <div className="pt-6 border-t border-gray-100 dark:border-zinc-800 text-center text-xs text-gray-400">
-              Desenvolvido por daviniccacio &copy; 2026
+              Desenvolvido por Davi Nicacio &copy; 2026
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

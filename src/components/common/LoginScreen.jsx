@@ -49,7 +49,7 @@ export default function LoginScreen({ viewAuth, setViewAuth, lidarComLogin, lida
             <div className="p-2.5 bg-white/10 rounded-xl border border-white/10">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <span className="text-sm font-bold tracking-wider uppercase">Gestor Financeiro</span>
+            <span className="text-sm font-bold tracking-wider uppercase">FinancePlus</span>
           </div>
           <div className="space-y-3 relative z-10 my-auto">
             <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
