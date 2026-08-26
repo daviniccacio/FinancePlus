@@ -8,16 +8,16 @@ import { Plus } from 'lucide-react';
 
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
-import LoginScreen from './components/LoginScreen';
-import ProtectedRoute from './components/ProtectedRoute';
+import LoginScreen from './components/common/LoginScreen';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 
 import CompetenceBar from './components/CompetenceBar';
 import FilterCenter from './components/FilterCenter';
 import TransactionTable from './components/TransactionTable';
 import TransactionModal from './components/TransactionModal';
-import DeleteModal from './components/DeleteModal';
-import AuthRecovery from './components/AuthRecovery';
-import Sidebar from './components/Sidebar';
+import DeleteModal from './components/common/DeleteModal';
+import AuthRecovery from './components/common/AuthRecovery';
+import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
 
