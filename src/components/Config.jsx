@@ -1,6 +1,6 @@
 // src/components/Config.jsx
-import { useState, useEffect } from 'react';
-import { User, Shield, Info, Code, FileText, Lock, Download, Trash2, RefreshCw, Upload, Bell, DollarSign, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { User, Shield, Info, Code, FileText, Lock, Download, Trash2, RefreshCw, Upload, Bell, DollarSign } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { jsPDF } from 'jspdf';
 import ExcelJS from 'exceljs';
@@ -11,7 +11,15 @@ export default function Configuracoes({ session, onLogout }) {
   
   // Estados de Perfil
   const [nomeUsuario, setNomeUsuario] = useState(session?.user?.user_metadata?.full_name || '');
+  const [prevSessionName, setPrevSessionName] = useState(session?.user?.user_metadata?.full_name);
   const [carregandoPerfil, setCarregandoPerfil] = useState(false);
+
+  // Sincronização limpa do estado sem disparar renderização em cascata no useEffect
+  const currentSessionName = session?.user?.user_metadata?.full_name;
+  if (currentSessionName !== prevSessionName) {
+    setPrevSessionName(currentSessionName);
+    setNomeUsuario(currentSessionName || '');
+  }
 
   // Estados de Senha
   const [novaSenha, setNovaSenha] = useState('');
@@ -27,12 +35,6 @@ export default function Configuracoes({ session, onLogout }) {
   // Estados de Preferências
   const [moedaPadrao, setMoedaPadrao] = useState('BRL');
   const [notificarVencimentos, setNotificarVencimentos] = useState(true);
-
-  useEffect(() => {
-    if (session?.user?.user_metadata?.full_name) {
-      setNomeUsuario(session.user.user_metadata.full_name);
-    }
-  }, [session]);
 
   // Auxiliar de Formatação de Data
   const formatarDataSegura = (dataInput) => {
@@ -264,7 +266,6 @@ export default function Configuracoes({ session, onLogout }) {
           return;
         }
 
-        // Mapeia os dados garantindo o ID do utilizador atual
         const dadosFormatados = transacoesImportadas.map(t => ({
           user_id: session.user.id,
           descricao: t.descricao,
