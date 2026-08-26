@@ -5,7 +5,6 @@ import { Wallet, Eye, EyeOff } from 'lucide-react';
 import AuthRecovery from './AuthRecovery';
 
 export default function LoginScreen({ viewAuth, setViewAuth, lidarComLogin, lidarComCadastro, lidarComSolicitacaoEmail }) {
-  // Estes estados agora vivem apenas onde são necessários
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -33,12 +32,14 @@ export default function LoginScreen({ viewAuth, setViewAuth, lidarComLogin, lida
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-200">
+    // 🌟 Ajustado para garantir centralização total em qualquer resolução
+    <div className="min-h-screen w-full bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-200">
       <Toaster position="bottom-right" />
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl shadow-sm border border-gray-200/60 dark:border-zinc-800 overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-130 transition-colors duration-200">
+      
+      <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl shadow-lg border border-gray-200/60 dark:border-zinc-800 overflow-hidden grid grid-cols-1 md:grid-cols-2 transition-colors duration-200 my-auto">
         
         {/* Lado Esquerdo - Banner */}
-        <div className="hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-blue-600 to-indigo-800 text-white relative overflow-hidden">
+        <div className="hidden md:flex flex-col justify-between p-10 bg-linear-to-br from-blue-600 to-indigo-800 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-5 pointer-events-none">
             <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <path d="M0 150 Q 200 220, 400 110 T 800 200" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -104,7 +105,7 @@ export default function LoginScreen({ viewAuth, setViewAuth, lidarComLogin, lida
                   <button
                     type="button"
                     onClick={() => setMostrarSenha(!mostrarSenha)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                   >
                     {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
