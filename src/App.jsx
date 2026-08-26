@@ -12,7 +12,6 @@ import LoginScreen from './components/LoginScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import CompetenceBar from './components/CompetenceBar';
-import ChatIA from './components/chatIA';
 import FilterCenter from './components/FilterCenter';
 import TransactionTable from './components/TransactionTable';
 import TransactionModal from './components/TransactionModal';
@@ -354,7 +353,6 @@ export default function App() {
           ejecutarExclusao={ejecutarExclusao}
         />
       )}
-      <ChatIA transacoes={transacoesFiltradas} saldoAtual={saldoAtual} />
     </div>
   );
 }
