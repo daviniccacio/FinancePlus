@@ -1,4 +1,4 @@
-# 💰 Gestor Financeiro v1.0.0
+# 💰 FinancePlus v1.0.0
 
 Um sistema web completo, moderno e responsivo para controlo e planeamento financeiro pessoal ou empresarial. O projeto foi construído utilizando **React** e **Vite**, integrado nativamente com o ecossistema do **Supabase** para autenticação segura e persistência de dados em tempo real, além de contar com uma interface elegante estilizada via **Tailwind CSS**.
 
