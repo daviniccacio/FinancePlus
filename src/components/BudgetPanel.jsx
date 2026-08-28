@@ -1,18 +1,12 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import { Target, AlertCircle, CheckCircle2, Pencil, Check, X, Plus, Trash2, Loader2, Wallet } from 'lucide-react';
 
-/**
- * Componente BudgetPanel
- * Gerencia Orçamentos (mensais) e Metas (acumuladas por Saídas históricas).
- */
-export default function BudgetPanel({ transacoes = [] }) {
-  const [limites, setLimites] = useState({});
-  const [historicoMetas, setHistoricoMetas] = useState({}); // Guarda o total acumulado histórico das metas
+export default function BudgetPanel({ transacoes = [], limites={}, setLimites }) {
+  const [historicoMetas, setHistoricoMetas] = useState({});
   const [carregandoMetas, setCarregandoMetas] = useState(true);
   const [userId, setUserId] = useState(null);
-
   // Estados de controle para Edição e Criação
   const [categoriaEmEdicao, setCategoriaEmEdicao] = useState(null);
   const [valorTemporario, setValorTemporario] = useState('');
@@ -34,8 +28,8 @@ export default function BudgetPanel({ transacoes = [] }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Buscar as configurações do banco (SEM valores padrão fixos para evitar o bug de reaparecer)
-  const carregarDadosDasMetas = async () => {
+  // 2. Buscar as configurações do banco (CORRIGIDO: adicionado dependências no useCallback)
+  const carregarDadosDasMetas = useCallback(async () => {
     if (!userId) return;
     try {
       setCarregandoMetas(true);
@@ -64,10 +58,10 @@ export default function BudgetPanel({ transacoes = [] }) {
     } finally {
       setCarregandoMetas(false);
     }
-  };
+  }, [userId, setLimites]); // CORREÇÃO AQUI: userId e setLimites adicionados como dependências
 
-  // 3. Buscar histórico total (de todos os tempos) para acumular as "Saídas" das Metas
-  const carregarHistoricoGeral = async () => {
+  // 3. Buscar histórico total para acumular as "Saídas" das Metas (Memorizada com useCallback)
+  const carregarHistoricoGeral = useCallback(async () => {
     if (!userId) return;
     try {
       const { data, error } = await supabase
@@ -93,14 +87,19 @@ export default function BudgetPanel({ transacoes = [] }) {
     } catch (error) {
       console.error('Erro ao calcular histórico:', error);
     }
-  };
+  }, [userId]);
 
+  // Efeito responsável por disparar a carga inicial sem travar a renderização síncrona
   useEffect(() => {
     if (userId) {
-      carregarDadosDasMetas();
-      carregarHistoricoGeral();
+      const timer = setTimeout(() => {
+        carregarDadosDasMetas();
+        carregarHistoricoGeral();
+      }, 0);
+      
+      return () => clearTimeout(timer);
     }
-  }, [userId]);
+  }, [userId, carregarDadosDasMetas, carregarHistoricoGeral]);
 
   // 4. Salvar/Atualizar uma meta ou orçamento existente
   const salvarLimite = async (categoria) => {
@@ -129,7 +128,7 @@ export default function BudgetPanel({ transacoes = [] }) {
         [categoria]: { ...prev[categoria], limite: valorNumerico }
       }));
       setCategoriaEmEdicao(null);
-      toast.success('Valor atualizado com sucesso!');
+      toast.success('Valor updated com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar:', error);
       toast.error('Erro ao salvar no banco.');
@@ -172,7 +171,7 @@ export default function BudgetPanel({ transacoes = [] }) {
     }
   };
 
-  // 6. Remover definitivamente (Cura o bug de reaparecer ao recarregar)
+  // 6. Remover definitivamente 
   const removerMeta = async (categoria) => {
     try {
       const { error } = await supabase
@@ -253,7 +252,7 @@ export default function BudgetPanel({ transacoes = [] }) {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Categoria / Nome</label>
-                <input type="text" placeholder="Ex: Viagem, Aluguel" desert-value="" required value={novaCategoria} onChange={(e) => setNovaCategoria(e.target.value)} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100" />
+                <input type="text" placeholder="Ex: Viagem, Aluguel" required value={novaCategoria} onChange={(e) => setNovaCategoria(e.target.value)} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100" />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Valor Alvo / Limite (R$)</label>
@@ -271,19 +270,16 @@ export default function BudgetPanel({ transacoes = [] }) {
           const itemConfig = limites[categoria];
           const ehMeta = itemConfig.tipo === 'meta';
           
-          // Seleção da origem do cálculo baseado no tipo escolhido
           const valorProgresso = ehMeta ? (historicoMetas[categoria] || 0) : (gastosMesPorCategoria[categoria] || 0);
           const limiteDefinido = itemConfig.limite;
           const isEditing = categoriaEmEdicao === categoria;
           
           const porcentagem = limiteDefinido > 0 ? Math.min(Math.round((valorProgresso / limiteDefinido) * 100), 100) : 0;
 
-          // Customização visual baseada no tipo (Meta = Verde foco em poupar | Orçamento = Azul foco em limite)
           let corBarra = ehMeta ? 'bg-emerald-500' : 'bg-blue-500';
           let corTexto = ehMeta ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400';
           let corFundoCard = 'bg-slate-50/50 dark:bg-zinc-800/30';
 
-          // Regra de estouro: Alerta vermelho apenas se for Orçamento Mensal
           if (!ehMeta && porcentagem >= 100) {
             corBarra = 'bg-red-500'; 
             corTexto = 'text-red-600 dark:text-red-400'; 
@@ -324,12 +320,10 @@ export default function BudgetPanel({ transacoes = [] }) {
                 </div>
               </div>
 
-              {/* Barra de Progresso */}
               <div className="w-full bg-gray-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
                 <div className={`h-full transition-all duration-500 ease-out ${corBarra}`} style={{ width: `${porcentagem}%` }} />
               </div>
 
-              {/* Indicadores de Feedback de Status */}
               <div className="flex items-center gap-1 text-[10px] font-semibold opacity-90">
                 {ehMeta ? (
                   porcentagem >= 100 ? (

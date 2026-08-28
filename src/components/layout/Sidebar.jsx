@@ -1,10 +1,11 @@
-import { LayoutDashboard, ReceiptText, LogOut, Sun, Moon } from 'lucide-react';
-import minhaLogo from "../assets/icon-financeplus.png"
+import { LayoutDashboard, ReceiptText, LogOut, Sun, Moon, Settings } from 'lucide-react';
+// Removemos a importação do "minhaLogo" que estava a causar erro
 
 export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, setDark }) {
   const menus = [
     { id: 'dashboard', nome: 'Resumo / Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'lancamentos', nome: 'Lançamentos', icon: <ReceiptText className="w-4 h-4" /> }
+    { id: 'lancamentos', nome: 'Lançamentos', icon: <ReceiptText className="w-4 h-4" /> },
+    { id: 'configuracoes', nome: 'Configurações', icon: <Settings className="w-4 h-4" /> }
   ];
 
   return (
@@ -12,8 +13,9 @@ export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, s
       <div>
         <div className="flex items-center gap-2.5 px-2 mb-8">
           <div className="p-1 bg-transparent rounded-lg flex items-center justify-center overflow-hidden">
+            {/* Atualizamos o src para procurar diretamente na pasta public */}
             <img 
-              src={minhaLogo} 
+              src="/favicon.png" 
               alt="Logo Gestor Financeiro" 
               className="w-12 h-12 object-contain rounded-2xl" 
             />
@@ -46,8 +48,6 @@ export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, s
       </div>
 
       <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-1 ">
-        
-        {/* BOTÃO DE SOL / LUA LOGO ACIMA DO BOTÃO DE LOGOUT */}
         <button
           type="button"
           onClick={() => setDark(!dark)}
@@ -66,7 +66,6 @@ export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, s
           )}
         </button>
 
-        {/* BOTÃO DE SAIR DA CONTA */}
         <button
           onClick={lidarComLogout}
           className="w-full flex items-center justify-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
