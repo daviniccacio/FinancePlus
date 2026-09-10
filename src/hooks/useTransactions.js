@@ -23,7 +23,8 @@ export function useTransactions(session) {
         .from('transacoes')
         .select('*')
         .eq('user_id', session.user.id)
-        .order('data', { ascending: false });
+        .order('data', { ascending: false })
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       setTransacoes(dados || []);

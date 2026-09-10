@@ -1,95 +1,135 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+// src/components/DashboardView.jsx
+import { useMemo } from 'react';
+import { Card, Text, DonutChart, AreaChart, Flex } from '@tremor/react';
 import SummaryCards from './SummaryCards';
 import AlertsPanel from './AlertsPanel';
 import BudgetPanel from './BudgetPanel';
 
-export default function DashboardView({ totalEntradas, totalSaidas, saldoAtual, transacoesFiltradas, limites = {}, setLimites }) {
-  
-  const dadosFluxo = [
-    { name: 'Entradas', valor: totalEntradas, fill: '#16a34a' },
-    { name: 'Saídas', valor: totalSaidas, fill: '#dc2626' }
-  ];
+export default function DashboardView({ 
+  totalEntradas, 
+  totalSaidas, 
+  saldoAtual, 
+  transacoesFiltradas, 
+  limites = {}, 
+  setLimites 
+}) {
 
-  const despesasPorCategoria = transacoesFiltradas
-    .filter(t => t.tipo === 'Saída')
-    .reduce((acc, atual) => {
-      const categoriaExistente = acc.find(item => item.name === atual.categoria);
-      if (categoriaExistente) {
-        categoriaExistente.value += atual.valor;
-      } else {
-        acc.push({ name: atual.categoria, value: atual.valor });
+  // 1. Prepara a linha do tempo para o AreaChart
+  const dadosFluxoTempo = useMemo(() => {
+    const mapa = {};
+    const ordenadas = [...transacoesFiltradas].sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    ordenadas.forEach((t) => {
+      const dataFormatada = t.data ? t.data.split('-').reverse().slice(0, 2).join('/') : 'Geral';
+      
+      if (!mapa[dataFormatada]) {
+        mapa[dataFormatada] = { Data: dataFormatada, Entradas: 0, Saídas: 0 };
       }
-      return acc;
-    }, []);
 
-  const CORES_GRAFICO = ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6b7280'];
+      if (t.tipo === 'Entrada') {
+        mapa[dataFormatada].Entradas += Number(t.valor);
+      } else if (t.tipo === 'Saída') {
+        mapa[dataFormatada].Saídas += Number(t.valor);
+      }
+    });
 
-  const formatarMoedaToolTip = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+    return Object.values(mapa);
+  }, [transacoesFiltradas]);
+
+  // 2. Agrupa as despesas por categoria para o DonutChart
+  const despesasPorCategoria = useMemo(() => {
+    const mapaCategorias = {};
+
+    transacoesFiltradas
+      .filter((t) => t.tipo === 'Saída')
+      .forEach((t) => {
+        const cat = t.categoria || 'Outros';
+        mapaCategorias[cat] = (mapaCategorias[cat] || 0) + Number(t.valor);
+      });
+
+    return Object.keys(mapaCategorias).map((categoria) => ({
+      name: categoria,
+      valor: mapaCategorias[categoria],
+    }));
+  }, [transacoesFiltradas]);
+
+  const formatarMoeda = (valor) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+
+  // Paleta de cores mapeada para o CSS
+  const PALETA_CORES = ["cyan", "violet", "pink", "amber", "emerald", "indigo", "rose"];
 
   return (
     <div className="space-y-4">
-      <SummaryCards totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} />
+      <SummaryCards 
+        totalEntradas={totalEntradas} 
+        totalSaidas={totalSaidas} 
+        saldoAtual={saldoAtual} 
+      />
 
-      <AlertsPanel transacoes={transacoesFiltradas} limites={limites}/>
+      <AlertsPanel 
+        transacoes={transacoesFiltradas} 
+        limites={limites} 
+      />
 
-      <BudgetPanel transacoes={transacoesFiltradas} limites={limites} setLimites={setLimites}/>
+      <BudgetPanel 
+        transacoes={transacoesFiltradas} 
+        limites={limites} 
+        setLimites={setLimites} 
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
-        {/* Gráfico 1: Fluxo de Caixa */}
-        <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-gray-200/60 dark:border-zinc-800 shadow-xs flex flex-col justify-between transition-colors duration-200">
-          <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">Fluxo de Caixa Geral</h3>
+        {/* Gráfico 1: Evolução do Fluxo de Caixa */}
+        <Card className="bg-white dark:bg-zinc-900 border-gray-200/60 dark:border-zinc-800 rounded-3xl">
+          <Text className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">
+            Evolução do Fluxo de Caixa
+          </Text>
           
-          {/* Correção aplicada: As diretivas de importância '!' mudaram para o final de cada classe utilitária */}
-          <div className="h-60 w-full text-[10px] font-semibold text-gray-400 dark:text-zinc-500 [&_.recharts-default-tooltip]:bg-white! [&_.recharts-default-tooltip]:dark:bg-zinc-800! [&_.recharts-default-tooltip]:border-gray-200! [&_.recharts-default-tooltip]:dark:border-zinc-700! [&_.recharts-default-tooltip_*]:text-gray-900! [&_.recharts-default-tooltip_*]:dark:text-zinc-100!">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dadosFluxo} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-100 dark:text-zinc-800/80" />
-                <XAxis dataKey="name" stroke="currentColor" className="text-slate-400 dark:text-zinc-500" />
-                <YAxis stroke="currentColor" className="text-slate-400 dark:text-zinc-500" tickFormatter={(v) => `R$ ${v}`} />
-                <Tooltip formatter={formatarMoedaToolTip} cursor={{ fill: 'currentColor', opacity: 0.04 }} />
-                <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
-                  {dadosFluxo.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          {dadosFluxoTempo.length === 0 ? (
+            <Flex className="h-60 items-center justify-center">
+              <span className="text-xs font-medium text-gray-400 dark:text-zinc-500">
+                Sem movimentações para exibir no gráfico.
+              </span>
+            </Flex>
+          ) : (
+            <AreaChart
+              className="h-60 mt-2"
+              data={dadosFluxoTempo}
+              index="Data"
+              categories={['Entradas', 'Saídas']}
+              colors={['emerald', 'rose']}
+              valueFormatter={formatarMoeda}
+              yAxisWidth={80}
+            />
+          )}
+        </Card>
 
         {/* Gráfico 2: Despesas por Categoria */}
-        <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-gray-200/60 dark:border-zinc-800 shadow-xs flex flex-col justify-between transition-colors duration-200">
-          <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">Despesas por Categoria</h3>
-          
-          <div className="h-60 w-full flex items-center justify-center [&_.recharts-default-tooltip]:bg-white! [&_.recharts-default-tooltip]:dark:bg-zinc-800! [&_.recharts-default-tooltip]:border-gray-200! [&_.recharts-default-tooltip]:dark:border-zinc-700! [&_.recharts-default-tooltip_*]:text-gray-900! [&_.recharts-default-tooltip_*]:dark:text-zinc-100!">
-            {despesasPorCategoria.length === 0 ? (
-              <span className="text-xs font-medium text-gray-400 dark:text-zinc-500">Nenhum gasto registrado neste período.</span>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={despesasPorCategoria}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {despesasPorCategoria.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CORES_GRAFICO[index % CORES_GRAFICO.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={formatarMoedaToolTip} />
-                  <Legend verticalAlign="bottom" height={32} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} className="text-slate-500 dark:text-zinc-400" />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
+        <Card className="bg-white dark:bg-zinc-900 border-gray-200/60 dark:border-zinc-800 rounded-3xl">
+          <Text className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">
+            Despesas por Categoria
+          </Text>
+
+          {despesasPorCategoria.length === 0 ? (
+            <Flex className="h-60 items-center justify-center">
+              <span className="text-xs font-medium text-gray-400 dark:text-zinc-500">
+                Nenhum gasto registrado neste período.
+              </span>
+            </Flex>
+          ) : (
+            <DonutChart
+              className="h-60 mt-2"
+              data={despesasPorCategoria}
+              category="valor"
+              index="name"
+              valueFormatter={formatarMoeda}
+              colors={PALETA_CORES}
+              showLegend={true}
+              showLabel={true}
+            />
+          )}
+        </Card>
 
       </div>
     </div>
