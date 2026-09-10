@@ -1,10 +1,63 @@
 /* src/index.css */
 @import "tailwindcss";
 
-/* 1. Modulo de verificação do Tailwind v4 para a pasta do Tremor */
+/* Rastreamento dos componentes da biblioteca Tremor */
 @source "../node_modules/@tremor/react";
 
-/* 2. Garantia de cores SVG para os gráficos do Tremor no Tailwind v4 */
+/* Ativação do modo escuro via classe .dark na tag <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   1. PADRONIZAÇÃO DE FONTES NO APP INTEIRO
+   ========================================================================== */
+body, input, button, select, textarea, svg, text {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* ==========================================================================
+   2. BORDAS DIVISÓRIAS ENTRE AS FATIAS DO GRÁFICO (Estilo Tremor)
+   ========================================================================== */
+.recharts-pie-sector {
+  stroke: #ffffff !important; /* Bordas brancas no Modo Claro */
+  stroke-width: 2.5px !important;
+  stroke-linejoin: round !important;
+}
+
+.dark .recharts-pie-sector {
+  stroke: #18181b !important; /* Bordas escuras (zinc-900) no Modo Escuro */
+  stroke-width: 2.5px !important;
+}
+
+/* ==========================================================================
+   3. DESATIVAÇÃO DE ESTILOS PADRÃO DO RECHARTS
+   ========================================================================== */
+.recharts-default-tooltip {
+  display: none !important; /* Esconde o tooltip padrão antigo */
+}
+
+/* Modo Claro e Escuro para Eixos */
+.recharts-cartesian-axis-tick-value,
+.recharts-text,
+.recharts-label,
+.recharts-legend-item-text {
+  fill: #64748b !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.dark .recharts-cartesian-axis-tick-value,
+.dark .recharts-text,
+.dark .recharts-label,
+.dark .recharts-legend-item-text {
+  fill: #a1a1aa !important;
+  color: #a1a1aa !important;
+}
+
+.recharts-curve.recharts-area-curve {
+  stroke-width: 3.5px !important;
+}
+
 @layer utilities {
   .fill-cyan-500 { fill: #06b6d4 !important; }
   .fill-violet-500 { fill: #8b5cf6 !important; }
