@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
-const CATEGORIAS_PADRAO = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Renda', 'Transferência', 'Contas', 'Investimentos', 'Outros'];
+const CATEGORIAS_PADRAO = [
+  'Alimentação', 'Moradia', 'Transporte', 'Saúde', 
+  'Educação', 'Lazer', 'Renda', 'Transferência', 
+  'Contas', 'Investimentos', 'Outros'
+];
 
 export default function TransactionModal({
   editandoId,
@@ -27,11 +31,29 @@ export default function TransactionModal({
   tipoRepeticao, 
   setTipoRepeticao,
   numeroParcelas, 
-  setNumeroParcelas
+  setNumeroParcelas,
+  transacoes = [] // 🌟 Nova prop recebida contendo o histórico do utilizador
 }) {
   const [modoTexto, setModoTexto] = useState(() => {
     return category && !CATEGORIAS_PADRAO.includes(category);
   });
+
+  // 🌟 Gera dinamicamente a lista unindo as Padrão com as Criadas pelo Utilizador
+  const todasCategorias = useMemo(() => {
+    // Extrai todas as categorias do histórico de transações
+    const categoriasExistentes = transacoes
+      .map((t) => t.categoria)
+      .filter((c) => c && Boolean(c.trim()));
+
+    // Se houver uma categoria sendo editada/digitada no momento, inclui também
+    if (category && category.trim()) {
+      categoriasExistentes.push(category.trim());
+    }
+
+    // Une as categorias padrão com as encontradas e remove duplicados usando Set
+    const combinadas = [...CATEGORIAS_PADRAO, ...categoriasExistentes];
+    return Array.from(new Set(combinadas)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [transacoes, category]);
 
   const formatarMoeda = (valor) => {
     let apenasDigitos = valor.replace(/\D/g, "");
@@ -121,7 +143,8 @@ export default function TransactionModal({
                   required
                 >
                   <option value="">Selecione uma categoria</option>
-                  {CATEGORIAS_PADRAO.map((cat) => (
+                  {/* 🌟 Mapeia a lista combinada e ordenada */}
+                  {todasCategorias.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
                     </option>
@@ -212,7 +235,6 @@ export default function TransactionModal({
 
                 {repetir && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-dashed border-gray-200 dark:border-zinc-700">
-                    {/* Alternador de Frequência */}
                     <div className="space-y-1">
                       <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Frequência</label>
                       <div className="flex bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 p-1 rounded-lg gap-1">
@@ -241,7 +263,6 @@ export default function TransactionModal({
                       </div>
                     </div>
 
-                    {/* Detalhes de Parcelas / Informativo */}
                     {tipoRepeticao === 'parcelado' ? (
                       <div className="space-y-1">
                         <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Nº de Parcelas</label>
@@ -266,7 +287,6 @@ export default function TransactionModal({
 
           </div>
 
-          {/* Botões de Ação */}
           <div className="flex justify-end space-x-2 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button
               type="button"

@@ -5,53 +5,83 @@ import SummaryCards from './SummaryCards';
 import AlertsPanel from './AlertsPanel';
 import BudgetPanel from './BudgetPanel';
 
-// Componente da Janela Flutuante (Tooltip) exatamente como o do site oficial da Tremor
-function CustomTooltip({ active, payload, setItemFocado, formatarMoeda }) {
+// Componente de Tooltip Universal unificado para ambos os gráficos
+function UniversalTooltip({ active, payload, label, formatarMoeda, setItemFocado }) {
+  // Atualiza o estado de hover do gráfico de rosca
   useEffect(() => {
-    if (active && payload && payload.length) {
-      setItemFocado({
-        name: payload[0].name,
-        valor: payload[0].value,
-      });
-    } else {
-      setItemFocado(null);
+    if (setItemFocado) {
+      if (active && payload && payload.length) {
+        setItemFocado({ name: payload[0].name, valor: payload[0].value });
+      } else {
+        setItemFocado(null);
+      }
     }
   }, [active, payload, setItemFocado]);
 
   if (!active || !payload || !payload.length) return null;
 
-  const data = payload[0];
+  // 1. Caso seja o Gráfico de Área (Evolução do Fluxo de Caixa)
+  if (label) {
+    return (
+      <div className="bg-zinc-900 text-white px-4 py-3 rounded-2xl shadow-2xl border border-zinc-800 text-xs font-semibold space-y-2 pointer-events-none">
+        <p className="text-[11px] font-bold text-zinc-400 border-b border-zinc-800 pb-1.5">
+          Data: {label}
+        </p>
+        <div className="space-y-1.5">
+          {payload.map((item, index) => {
+            const corBola = item.name === 'Entradas' ? '#10b981' : '#f43f5e';
+            return (
+              <div key={index} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color || corBola }}
+                  />
+                  <span className="text-zinc-300">{item.name}</span>
+                </div>
+                <span className="font-extrabold text-white">
+                  {formatarMoeda(item.value)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
+  // 2. Caso seja o Gráfico de Rosca (Despesas por Categoria)
+  const item = payload[0];
   return (
-    <div className="flex items-center gap-2.5 bg-zinc-900 text-white px-3.5 py-2 rounded-xl shadow-2xl border border-zinc-800 text-xs font-semibold animate-in fade-in zoom-in-95 duration-100 pointer-events-none">
+    <div className="flex items-center gap-2.5 bg-zinc-900 text-white px-3.5 py-2 rounded-xl shadow-2xl border border-zinc-800 text-xs font-semibold pointer-events-none">
       <span
         className="w-2.5 h-2.5 rounded-full shrink-0"
-        style={{ backgroundColor: data.color || '#3b82f6' }}
+        style={{ backgroundColor: item.color || '#3b82f6' }}
       />
-      <span className="text-zinc-200">{data.name}</span>
-      <span className="font-extrabold text-white ml-2">{formatarMoeda(data.value)}</span>
+      <span className="text-zinc-200">{item.name}</span>
+      <span className="font-extrabold text-white ml-2">{formatarMoeda(item.value)}</span>
     </div>
   );
 }
 
-export default function DashboardView({ 
-  totalEntradas, 
-  totalSaidas, 
-  saldoAtual, 
-  transacoesFiltradas, 
-  limites = {}, 
-  setLimites 
+export default function DashboardView({
+  totalEntradas,
+  totalSaidas,
+  saldoAtual,
+  transacoesFiltradas,
+  limites = {},
+  setLimites
 }) {
   const [itemFocado, setItemFocado] = useState(null);
 
-  // 1. Agrupa as transações por data para o gráfico de linha/área
+  // 1. Agrupa as transações por data para a linha do tempo do fluxo de caixa
   const dadosFluxoTempo = useMemo(() => {
     const mapa = {};
     const ordenadas = [...transacoesFiltradas].sort((a, b) => new Date(a.data) - new Date(b.data));
 
     ordenadas.forEach((t) => {
       const dataFormatada = t.data ? t.data.split('-').reverse().slice(0, 2).join('/') : 'Geral';
-      
+
       if (!mapa[dataFormatada]) {
         mapa[dataFormatada] = { Data: dataFormatada, Entradas: 0, Saídas: 0 };
       }
@@ -83,6 +113,7 @@ export default function DashboardView({
     }));
   }, [transacoesFiltradas]);
 
+  // Formatador monetário
   const formatarMoeda = (valor) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 
@@ -99,27 +130,27 @@ export default function DashboardView({
   return (
     <div className="space-y-6 font-sans">
       {/* Cards de Resumo */}
-      <SummaryCards 
-        totalEntradas={totalEntradas} 
-        totalSaidas={totalSaidas} 
-        saldoAtual={saldoAtual} 
+      <SummaryCards
+        totalEntradas={totalEntradas}
+        totalSaidas={totalSaidas}
+        saldoAtual={saldoAtual}
       />
 
       {/* Painéis de Alertas e Orçamentos */}
-      <AlertsPanel 
-        transacoes={transacoesFiltradas} 
-        limites={limites} 
+      <AlertsPanel
+        transacoes={transacoesFiltradas}
+        limites={limites}
       />
 
-      <BudgetPanel 
-        transacoes={transacoesFiltradas} 
-        limites={limites} 
-        setLimites={setLimites} 
+      <BudgetPanel
+        transacoes={transacoesFiltradas}
+        limites={limites}
+        setLimites={setLimites}
       />
 
       {/* Grid de Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Gráfico 1: Evolução do Fluxo de Caixa */}
         <div className="bg-white dark:bg-zinc-900 border border-gray-200/80 dark:border-zinc-800/80 p-6 rounded-3xl shadow-xs transition-colors duration-200">
           <div className="flex items-center justify-between mb-4">
@@ -135,7 +166,7 @@ export default function DashboardView({
               </span>
             </div>
           </div>
-          
+
           {dadosFluxoTempo.length === 0 ? (
             <Flex className="h-64 items-center justify-center">
               <span className="text-xs font-medium text-gray-400 dark:text-zinc-500">
@@ -154,14 +185,20 @@ export default function DashboardView({
               yAxisWidth={75}
               curveType="linear"
               connectNulls={true}
+              customTooltip={(props) => (
+                <UniversalTooltip
+                  {...props}
+                  formatarMoeda={formatarMoeda}
+                />
+              )}
             />
           )}
         </div>
 
-        {/* Gráfico 2: Despesas por Categoria (Visual Idêntico à Tremor) */}
+        {/* Gráfico 2: Despesas por Categoria */}
         <div className="bg-white dark:bg-zinc-900 border border-gray-200/80 dark:border-zinc-800/80 p-6 rounded-3xl shadow-xs transition-colors duration-200">
-          
-          {/* Valor Superior Dinâmico (Muda ao passar o rato) */}
+
+          {/* Valor Superior Dinâmico */}
           <div className="text-center mb-2">
             <p className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
               {tituloExibido}
@@ -186,10 +223,10 @@ export default function DashboardView({
               valueFormatter={formatarMoeda}
               colors={PALETA_CORES}
               variant="donut"
-              showLabel={false} /* Desativa o texto no centro do furo */
+              showLabel={false}
               showLegend={false}
               customTooltip={(props) => (
-                <CustomTooltip
+                <UniversalTooltip
                   {...props}
                   setItemFocado={setItemFocado}
                   formatarMoeda={formatarMoeda}
