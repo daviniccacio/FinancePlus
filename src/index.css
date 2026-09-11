@@ -15,24 +15,47 @@ body, input, button, select, textarea, svg, text {
 }
 
 /* ==========================================================================
-   2. BORDAS DIVISÓRIAS ENTRE AS FATIAS DO GRÁFICO (Estilo Tremor)
+   2. REGRAS DE ARREDONDAMENTO E EFEITOS DAS BARRAS
    ========================================================================== */
 .recharts-pie-sector {
-  stroke: #ffffff !important; /* Bordas brancas no Modo Claro */
+  stroke: #ffffff !important;
   stroke-width: 2.5px !important;
   stroke-linejoin: round !important;
 }
 
 .dark .recharts-pie-sector {
-  stroke: #18181b !important; /* Bordas escuras (zinc-900) no Modo Escuro */
+  stroke: #18181b !important;
   stroke-width: 2.5px !important;
+}
+
+/* Arredondamento e transição suave das barras */
+.recharts-bar-rectangle rect,
+.recharts-bar-rectangle path {
+  rx: 8px !important;
+  ry: 8px !important;
+  transition: filter 0.2s ease, opacity 0.2s ease !important;
+}
+
+/* Efeito ao passar o cursor: barra fica mais escurinha */
+.recharts-bar-rectangle:hover rect,
+.recharts-bar-rectangle:hover path {
+  filter: brightness(0.82) !important;
+  cursor: pointer !important;
+}
+
+/* Oculta o fundo cinza (Área focada do tooltip) */
+.recharts-tooltip-cursor,
+.recharts-rectangle.recharts-tooltip-cursor {
+  fill: transparent !important;
+  stroke: transparent !important;
+  display: none !important;
 }
 
 /* ==========================================================================
    3. DESATIVAÇÃO DE ESTILOS PADRÃO DO RECHARTS
    ========================================================================== */
 .recharts-default-tooltip {
-  display: none !important; /* Esconde o tooltip padrão antigo */
+  display: none !important;
 }
 
 /* Modo Claro e Escuro para Eixos */
