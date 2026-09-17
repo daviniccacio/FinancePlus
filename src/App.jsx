@@ -1,10 +1,12 @@
 // src/App.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast, { Toaster } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
@@ -21,11 +23,17 @@ import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
 
+// Registro do plugin GSAP para React
+gsap.registerPlugin(useGSAP);
+
 export default function App() {
   const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
   
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Referência para o contêiner principal das páginas (usado na transição de rotas)
+  const pageRef = useRef(null);
 
   // Mapeia a rota atual do navegador para a aba ativa da Sidebar
   const abaAtiva = location.pathname === '/lancamentos' 
@@ -54,6 +62,34 @@ export default function App() {
     if (typeof window !== 'undefined') return localStorage.getItem('theme') === 'dark';
     return false;
   });
+
+  // 🌟 ANIMAÇÃO GSAP: Entrada automática em qualquer troca de rota
+  useGSAP(() => {
+    if (pageRef.current) {
+      gsap.fromTo(
+        pageRef.current,
+        { opacity: 0, y: 15, scale: 0.99 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'power2.out' }
+      );
+    }
+  }, { dependencies: [location.pathname] });
+
+  // 🌟 FUNÇÃO DE TRANSIÇÃO: Anima a saída do Login antes de navegar para o Dashboard
+  const lidarComLoginETransicao = async (email, password) => {
+    const sucesso = await login(email, password);
+    if (sucesso && pageRef.current) {
+      gsap.to(pageRef.current, {
+        opacity: 0,
+        y: -20,
+        scale: 0.97,
+        duration: 0.35,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          navigate('/dashboard');
+        },
+      });
+    }
+  };
 
   useEffect(() => {
     if (dark) {
@@ -169,7 +205,7 @@ export default function App() {
     return [...new Set(transacoes.map(t => t.categoria))].filter(Boolean);
   }, [transacoes]);
 
-  // 🌟 OTIMIZAÇÃO: Filtragem memoizada
+  // Filtragem memoizada
   const transacoesFiltradas = useMemo(() => {
     return transacoes.filter((t) => {
       if (filtroPeriodo === 'mensal' && filtroCompetencia) {
@@ -194,7 +230,7 @@ export default function App() {
     });
   }, [transacoes, filtroPeriodo, filtroCompetencia, filtroCategoria, buscaTexto, filtroStatus]);
 
-  // 🌟 OTIMIZAÇÃO: Cálculos de Totais memoizados
+  // Cálculos de Totais memoizados
   const { totalEntradas, totalSaidas, saldoAtual } = useMemo(() => {
     const entradas = transacoesFiltradas.filter(t => t.tipo === 'Entrada').reduce((acc, curr) => acc + curr.valor, 0);
     const saidas = transacoesFiltradas.filter(t => t.tipo === 'Saída').reduce((acc, curr) => acc + curr.valor, 0);
@@ -290,7 +326,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
       
-      {/* 🌟 Toaster Dinâmico com Tema Claro e Escuro */}
+      {/* Toaster Dinâmico */}
       <Toaster 
         position="bottom-right" 
         toastOptions={{
@@ -304,91 +340,91 @@ export default function App() {
         }} 
       />
 
-      <Routes>
-        {/* Rota Pública (Login / Cadastro) */}
-        <Route 
-          path="/" 
-          element={
-            <LoginScreen 
-              viewAuth={viewAuth} 
-              setViewAuth={setViewAuth} 
-              lidarComLogin={async (email, password) => {
-                const sucesso = await login(email, password);
-                if (sucesso) navigate('/dashboard');
-              }} 
-              lidarComCadastro={cadastro} 
-              lidarComSolicitacaoEmail={recuperarSenha} 
-            />
-          } 
-        />
+      {/* 🌟 ENVOLTÓRIO DA PÁGINA: Recebe as animações GSAP de rota */}
+      <div ref={pageRef} className="w-full min-h-screen">
+        <Routes>
+          {/* Rota Pública (Login / Cadastro) */}
+          <Route 
+            path="/" 
+            element={
+              <LoginScreen 
+                viewAuth={viewAuth} 
+                setViewAuth={setViewAuth} 
+                lidarComLogin={lidarComLoginETransicao} 
+                lidarComCadastro={cadastro} 
+                lidarComSolicitacaoEmail={recuperarSenha} 
+              />
+            } 
+          />
 
-        {/* Rotas Protegidas */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute session={session}>
-              <div className="flex w-full min-h-screen">
-                <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
-                <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                  <div className="flex justify-between items-center min-h-12">
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Painel de Controle</h2>
-                      <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Análise visual e estatística consolidada.</p>
+          {/* Rotas Protegidas */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute session={session}>
+                <div className="flex w-full min-h-screen">
+                  <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                  <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                    <div className="flex justify-between items-center min-h-12">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Painel de Controle</h2>
+                        <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Análise visual e estatística consolidada.</p>
+                      </div>
                     </div>
-                  </div>
-                  <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
-                  <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } 
-        />
+                    <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+                    <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
+                  </main>
+                </div>
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route 
-          path="/lancamentos" 
-          element={
-            <ProtectedRoute session={session}>
-              <div className="flex w-full min-h-screen">
-                <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
-                <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                  <div className="flex justify-between items-center min-h-12">
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Lançamentos</h2>
-                      <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado das transações.</p>
+          <Route 
+            path="/lancamentos" 
+            element={
+              <ProtectedRoute session={session}>
+                <div className="flex w-full min-h-screen">
+                  <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                  <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                    <div className="flex justify-between items-center min-h-12">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Lançamentos</h2>
+                        <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado das transações.</p>
+                      </div>
+                      <button onClick={() => setIsModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer">
+                        <Plus className="w-4 h-4" /> Novo Lançamento
+                      </button>
                     </div>
-                    <button onClick={() => setIsModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer">
-                      <Plus className="w-4 h-4" /> Novo Lançamento
-                    </button>
-                  </div>
-                  <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
-                  <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
-                  <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } 
-        />
+                    <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+                    <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
+                    <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
+                  </main>
+                </div>
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route 
-          path="/configuracoes" 
-          element={
-            <ProtectedRoute session={session}>
-              <div className="flex w-full min-h-screen">
-                <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
-                <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                  <div className="flex justify-between items-center min-h-12">
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Ajustes</h2>
-                      <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Gerencie preferências e segurança.</p>
+          <Route 
+            path="/configuracoes" 
+            element={
+              <ProtectedRoute session={session}>
+                <div className="flex w-full min-h-screen">
+                  <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                  <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                    <div className="flex justify-between items-center min-h-12">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Ajustes</h2>
+                        <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Gerencie preferências e segurança.</p>
+                      </div>
                     </div>
-                  </div>
-                  <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
+                    <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />
+                  </main>
+                </div>
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </div>
 
       {isModalAberto && (
         <TransactionModal transacoes={transacoes} editandoId={editandoId} limparFormulario={limparFormulario} salvarLancamento={salvarLancamento} data={data} setData={setData} dataVencimento={dataVencimento} setDataVencimento={setDataVencimento} descricao={descricao} setDescricao={setDescricao} dadosPagamento={dadosPagamento} setDadosPagamento={setDadosPagamento} valorMascara={valorMascara} setValorMascara={setValorMascara} category={categoria} setCategoria={setCategoria} tipo={tipo} setTipo={setTipo} status={status} setStatus={setStatus} repetir={repetir} setRepetir={setRepetir} tipoRepeticao={tipoRepeticao} setTipoRepeticao={setTipoRepeticao} numeroParcelas={numeroParcelas} setNumeroParcelas={setNumeroParcelas} />
