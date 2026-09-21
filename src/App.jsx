@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -23,7 +23,6 @@ import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
 
-// Registro do plugin GSAP para React
 gsap.registerPlugin(useGSAP);
 
 export default function App() {
@@ -31,18 +30,14 @@ export default function App() {
   
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Referência para o contêiner principal das páginas (usado na transição de rotas)
   const pageRef = useRef(null);
 
-  // Mapeia a rota atual do navegador para a aba ativa da Sidebar
   const abaAtiva = location.pathname === '/lancamentos' 
     ? 'lancamentos' 
     : location.pathname === '/configuracoes' 
       ? 'configuracoes' 
       : 'dashboard';
 
-  // Função para mudar de aba usando o React Router
   const setAbaAtiva = (novaAba) => {
     if (novaAba === 'dashboard') navigate('/dashboard');
     if (novaAba === 'lancamentos') navigate('/lancamentos');
@@ -60,10 +55,9 @@ export default function App() {
   const [limites, setLimites] = useState({});
   const [dark, setDark] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('theme') === 'dark';
-    return true; // Padrão escuro ativado
+    return true;
   });
 
-  // 🌟 ANIMAÇÃO GSAP: Entrada automática em qualquer troca de rota
   useGSAP(() => {
     if (pageRef.current) {
       gsap.fromTo(
@@ -74,7 +68,6 @@ export default function App() {
     }
   }, { dependencies: [location.pathname] });
 
-  // 🌟 FUNÇÃO DE TRANSIÇÃO: Anima a saída do Login antes de navegar para o Dashboard
   const lidarComLoginETransicao = async (email, password) => {
     const sucesso = await login(email, password);
     if (sucesso && pageRef.current) {
@@ -113,7 +106,6 @@ export default function App() {
     gerenciarSessao();
   }, [session, buscarTransacoes, location.pathname, navigate]);
 
-  // Estados dos Filtros
   const [buscaTexto, setBuscaTexto] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -125,7 +117,6 @@ export default function App() {
   });
   const [filtroPeriodo, setFiltroPeriodo] = useState('mensal');
 
-  // Estados do Modal de Lançamento
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
   const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
@@ -205,7 +196,6 @@ export default function App() {
     return [...new Set(transacoes.map(t => t.categoria))].filter(Boolean);
   }, [transacoes]);
 
-  // Filtragem memoizada
   const transacoesFiltradas = useMemo(() => {
     return transacoes.filter((t) => {
       if (filtroPeriodo === 'mensal' && filtroCompetencia) {
@@ -230,7 +220,6 @@ export default function App() {
     });
   }, [transacoes, filtroPeriodo, filtroCompetencia, filtroCategoria, buscaTexto, filtroStatus]);
 
-  // Cálculos de Totais memoizados
   const { totalEntradas, totalSaidas, saldoAtual } = useMemo(() => {
     const entradas = transacoesFiltradas.filter(t => t.tipo === 'Entrada').reduce((acc, curr) => acc + curr.valor, 0);
     const saidas = transacoesFiltradas.filter(t => t.tipo === 'Saída').reduce((acc, curr) => acc + curr.valor, 0);
@@ -290,7 +279,6 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
-  // Loader de verificação inicial de sessão
   if (carregandoSessao) {
     return (
       <div className="min-h-screen flex items-center justify-center font-sans bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]">
@@ -302,152 +290,114 @@ export default function App() {
     );
   }
 
-  // Tela de Redefinição de Senha
-  if (viewAuth === 'definir') {
-    return (
-      <>
-        <Toaster 
-          position="bottom-right" 
-          toastOptions={{
-            style: {
-              background: dark ? '#161e18' : '#ffffff',
-              color: dark ? '#FFE2FE' : '#1f2937',
-              border: dark ? '1px solid #273C2C' : '1px solid #e5e7eb',
-              fontSize: '12px',
-              borderRadius: '12px',
-            },
-          }} 
-        />
-        <AuthRecovery modo="definir" aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/'); }} aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)} />
-      </>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-start transition-colors duration-200 font-sans bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]">
-      
-      {/* Toaster Dinâmico */}
-      <Toaster 
-        position="bottom-right" 
-        toastOptions={{
-          style: {
-            background: dark ? '#161e18' : '#ffffff',
-            color: dark ? '#FFE2FE' : '#1f2937',
-            border: dark ? '1px solid #273C2C' : '1px solid #e5e7eb',
-            fontSize: '12px',
-            borderRadius: '12px',
-          },
-        }} 
-      />
 
-      {/* 🌟 ENVOLTÓRIO DA PÁGINA: Recebe as animações GSAP de rota */}
-      <div ref={pageRef} className="w-full min-h-screen">
-        <Routes>
-          {/* Rota Pública (Login / Cadastro) */}
-          <Route 
-            path="/" 
-            element={
-              <LoginScreen 
-                viewAuth={viewAuth} 
-                setViewAuth={setViewAuth} 
-                lidarComLogin={lidarComLoginETransicao} 
-                lidarComCadastro={cadastro} 
-                lidarComSolicitacaoEmail={recuperarSenha} 
-              />
-            } 
-          />
+      {/* ROTA DE REDEFINIÇÃO DE SENHA */}
+      {viewAuth === 'definir' ? (
+        <AuthRecovery 
+          modo="definir" 
+          aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/'); }} 
+          aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)} 
+        />
+      ) : (
+        /* ENVOLTÓRIO DAS ROTAS PRINCIPAIS */
+        <div ref={pageRef} className="w-full min-h-screen">
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                <LoginScreen 
+                  viewAuth={viewAuth} 
+                  setViewAuth={setViewAuth} 
+                  lidarComLogin={lidarComLoginETransicao} 
+                  lidarComCadastro={cadastro} 
+                  lidarComSolicitacaoEmail={recuperarSenha} 
+                />
+              } 
+            />
 
-          {/* Rotas Protegidas */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute session={session}>
-                <div className="flex w-full min-h-screen">
-                  <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
-                  <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                    <div className="flex justify-between items-center min-h-12">
-                      <div>
-                        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Painel de Controle</h2>
-                        <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Análise visual e estatística consolidada.</p>
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute session={session}>
+                  <div className="flex w-full min-h-screen">
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                    <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                      <div className="flex justify-between items-center min-h-12">
+                        <div>
+                          <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Painel de Controle</h2>
+                          <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Análise visual e estatística consolidada.</p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* 🌟 NÍVEL z-30: Garante que os seletores de competência abram por cima de tudo */}
-                    <div className="relative z-30">
-                      <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
-                    </div>
-
-                    {/* 🌟 NÍVEL z-10: Conteúdo da Dashboard */}
-                    <div className="relative z-10">
-                      <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
-                    </div>
-                  </main>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route 
-            path="/lancamentos" 
-            element={
-              <ProtectedRoute session={session}>
-                <div className="flex w-full min-h-screen">
-                  <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
-                  <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                    <div className="flex justify-between items-center min-h-12">
-                      <div>
-                        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Lançamentos</h2>
-                        <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Histórico detalhado das transações.</p>
+                      <div className="relative z-30">
+                        <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
                       </div>
-                      <button 
-                        onClick={() => setIsModalAberto(true)} 
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
-                      >
-                        <Plus className="w-4 h-4" /> Novo Lançamento
-                      </button>
-                    </div>
-
-                    {/* 🌟 NÍVEL z-30: Garante sobreposição dos seletores da barra de competência */}
-                    <div className="relative z-30">
-                      <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
-                    </div>
-
-                    {/* 🌟 NÍVEL z-20: Garante que os seletores de categoria/status do FilterCenter abram sobre a Tabela */}
-                    <div className="relative z-20">
-                      <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
-                    </div>
-
-                    {/* 🌟 NÍVEL z-10: Tabela de Histórico de Lançamentos */}
-                    <div className="relative z-10">
-                      <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
-                    </div>
-                  </main>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route 
-            path="/configuracoes" 
-            element={
-              <ProtectedRoute session={session}>
-                <div className="flex w-full min-h-screen">
-                  <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
-                  <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                    <div className="flex justify-between items-center min-h-12">
-                      <div>
-                        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Ajustes</h2>
-                        <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Gerencie preferências e segurança.</p>
+                      <div className="relative z-10">
+                        <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
                       </div>
-                    </div>
-                    <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />
-                  </main>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </div>
+                    </main>
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/lancamentos" 
+              element={
+                <ProtectedRoute session={session}>
+                  <div className="flex w-full min-h-screen">
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                    <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                      <div className="flex justify-between items-center min-h-12">
+                        <div>
+                          <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Lançamentos</h2>
+                          <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Histórico detalhado das transações.</p>
+                        </div>
+                        <button 
+                          onClick={() => setIsModalAberto(true)} 
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
+                        >
+                          <Plus className="w-4 h-4" /> Novo Lançamento
+                        </button>
+                      </div>
+                      <div className="relative z-30">
+                        <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+                      </div>
+                      <div className="relative z-20">
+                        <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
+                      </div>
+                      <div className="relative z-10">
+                        <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
+                      </div>
+                    </main>
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/configuracoes" 
+              element={
+                <ProtectedRoute session={session}>
+                  <div className="flex w-full min-h-screen">
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                    <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                      <div className="flex justify-between items-center min-h-12">
+                        <div>
+                          <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Ajustes</h2>
+                          <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Gerencie preferências e segurança.</p>
+                        </div>
+                      </div>
+                      <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />
+                    </main>
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </div>
+      )}
 
       {isModalAberto && (
         <TransactionModal transacoes={transacoes} editandoId={editandoId} limparFormulario={limparFormulario} salvarLancamento={salvarLancamento} data={data} setData={setData} dataVencimento={dataVencimento} setDataVencimento={setDataVencimento} descricao={descricao} setDescricao={setDescricao} dadosPagamento={dadosPagamento} setDadosPagamento={setDadosPagamento} valorMascara={valorMascara} setValorMascara={setValorMascara} category={categoria} setCategoria={setCategoria} tipo={tipo} setTipo={setTipo} status={status} setStatus={setStatus} repetir={repetir} setRepetir={setRepetir} tipoRepeticao={tipoRepeticao} setTipoRepeticao={setTipoRepeticao} numeroParcelas={numeroParcelas} setNumeroParcelas={setNumeroParcelas} />

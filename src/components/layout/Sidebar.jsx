@@ -76,7 +76,7 @@ export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, s
         <button
           type="button"
           onClick={lidarComLogout}
-          className="w-full flex items-center justify-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-[#273c2c] transition-all cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           <span>Sair da Conta</span>

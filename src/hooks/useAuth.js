@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 import { traduzirErroSupabase, validarCamposAuth } from "../utils/AuthHelpers";
-import toast from "react-hot-toast";
+import { notify } from "../utils/notify";
 
 export function useAuth() {
   const [session, setSession] = useState(null);
@@ -19,10 +19,9 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    // Verifica a sessão atual ao carregar a página
     supabase.auth.getSession().then(({ data: { session: sessaoInicial } }) => {
       setSession(sessaoInicial);
-      setCarregandoSessao(false); // Terminou a verificação inicial
+      setCarregandoSessao(false);
     });
 
     const {
@@ -41,7 +40,7 @@ export function useAuth() {
   const login = async (email, password) => {
     const validacao = validarCamposAuth(email, password, false);
     if (!validacao.valido) {
-      toast.error(validacao.mensagem);
+      notify.error(validacao.mensagem);
       return false;
     }
     const { error } = await supabase.auth.signInWithPassword({
@@ -49,14 +48,12 @@ export function useAuth() {
       password,
     });
     if (error) {
-      toast.error(traduzirErroSupabase(error));
+      notify.error(traduzirErroSupabase(error));
       return false;
     }
-    toast.success("Bem-vindo de volta!");
+    notify.success("Bem-vindo de volta!");
     return true;
   };
-
-  // Localiza a função cadastro dentro do src/hooks/useAuth.js e substitui por esta:
 
   const cadastro = async (email, password, nome, confirmarSenha) => {
     const validacao = validarCamposAuth(
@@ -64,10 +61,10 @@ export function useAuth() {
       password,
       true,
       nome,
-      confirmarSenha,
+      confirmarSenha
     );
     if (!validacao.valido) {
-      toast.error(validacao.mensagem);
+      notify.error(validacao.mensagem);
       return false;
     }
 
@@ -76,31 +73,31 @@ export function useAuth() {
         email,
         password,
         options: {
-          data: { full_name: nome }, // Guarda o nome do utilizador nos metadados do Supabase
+          data: { full_name: nome },
         },
       });
 
       if (error) throw error;
 
       if (data?.user && data?.user?.identities?.length === 0) {
-        toast.error("Este e-mail já está cadastrado no sistema.");
+        notify.error("Este e-mail já está cadastrado no sistema.");
         return false;
       }
 
-      toast.success(
-        "Cadastro realizado com sucesso! Verifique o seu e-mail de confirmação.",
+      notify.success(
+        "Cadastro realizado com sucesso! Verifique o seu e-mail de confirmação."
       );
       setViewAuth("login");
       return true;
     } catch (error) {
-      toast.error(`Erro ao cadastrar: ${traduzirErroSupabase(error)}`);
+      notify.error(`Erro ao cadastrar: ${traduzirErroSupabase(error)}`);
       return false;
     }
   };
 
   const recuperarSenha = async ({ email: emailRecuperacao }, setCarregando) => {
     if (!emailRecuperacao || !emailRecuperacao.includes("@")) {
-      toast.error("Por favor, insira um e-mail válido.");
+      notify.error("Por favor, insira um e-mail válido.");
       setCarregando(false);
       return;
     }
@@ -109,15 +106,15 @@ export function useAuth() {
         emailRecuperacao,
         {
           redirectTo: window.location.origin,
-        },
+        }
       );
       if (error) throw error;
-      toast.success(
-        "Link de recuperação enviado! Verifique a sua caixa de entrada.",
+      notify.success(
+        "Link de recuperação enviado! Verifique a sua caixa de entrada."
       );
       setViewAuth("login");
     } catch (error) {
-      toast.error(traduzirErroSupabase(error));
+      notify.error(traduzirErroSupabase(error));
     } finally {
       setCarregando(false);
     }
@@ -126,29 +123,29 @@ export function useAuth() {
   const definirNovaSenha = async (
     { novaSenha, confirmarSenha },
     email,
-    setCarregando,
+    setCarregando
   ) => {
     if (novaSenha !== confirmarSenha) {
-      toast.error("As senhas digitadas não coincidem!");
+      notify.error("As senhas digitadas não coincidem!");
       setCarregando(false);
       return;
     }
     const validacao = validarCamposAuth(email, novaSenha, true);
     if (!validacao.valido) {
-      toast.error(validacao.mensagem);
+      notify.error(validacao.mensagem);
       setCarregando(false);
       return;
     }
     try {
       const { error } = await supabase.auth.updateUser({ password: novaSenha });
       if (error) throw error;
-      toast.success(
-        "Palavra-passe redefinida com sucesso! Faça login novamente.",
+      notify.success(
+        "Palavra-passe redefinida com sucesso! Faça login novamente."
       );
       await supabase.auth.signOut();
       setViewAuth("login");
     } catch (error) {
-      toast.error(traduzirErroSupabase(error));
+      notify.error(traduzirErroSupabase(error));
     } finally {
       setCarregando(false);
     }
@@ -156,7 +153,7 @@ export function useAuth() {
 
   const logout = async () => {
     await supabase.auth.signOut();
-    toast.success("Sessão encerrada.");
+    notify.success("Sessão encerrada.");
   };
 
   return {

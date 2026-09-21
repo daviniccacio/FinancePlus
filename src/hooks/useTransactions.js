@@ -1,7 +1,7 @@
 // src/hooks/useTransactions.js
 import { useState, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
-import toast from 'react-hot-toast';
+import { notify } from '../utils/notify';
 
 function parseMascaraParaNumero(valor) {
   if (!valor) return 0;
@@ -30,13 +30,13 @@ export function useTransactions(session) {
       setTransacoes(dados || []);
     } catch (error) {
       console.error('Erro ao buscar transações:', error);
-      toast.error('Erro ao buscar dados do banco.');
+      notify.error('Erro ao buscar dados do banco.');
     } finally {
       setCarregando(false);
     }
   }, [session]);
 
-  // 2. Guardar ou atualizar um lançamento (com suporte a parcelados e fixos)
+  // 2. Guardar ou atualizar um lançamento
   const salvarLancamento = async ({
     editandoId,
     grupoId,
@@ -53,18 +53,18 @@ export function useTransactions(session) {
     numeroParcelas
   }, limparFormularioCallback) => {
     if (!session?.user?.id) {
-      toast.error('Sessão inválida. Faça login novamente.');
+      notify.error('Sessão inválida. Faça login novamente.');
       return;
     }
 
     if (!descricao || !valorMascara || !data) {
-      alert('Preencha os campos obrigatórios.');
+      notify.error('Preencha os campos obrigatórios.');
       return;
     }
 
     const valorNumerico = parseMascaraParaNumero(valorMascara);
     if (isNaN(valorNumerico) || valorNumerico <= 0) {
-      alert('Insira um valor válido maior que zero.');
+      notify.error('Insira um valor válido maior que zero.');
       return;
     }
 
@@ -76,7 +76,6 @@ export function useTransactions(session) {
 
       if (editandoId) {
         if (grupoId) {
-          // Atualiza o grupo filtrando obrigatoriamente por grupo_id E user_id
           const { error: erroGrupo } = await supabase
             .from('transacoes')
             .update({ valor: valorNumerico, categoria, tipo, dados_pagamento: dadosPagamento || null })
@@ -84,7 +83,6 @@ export function useTransactions(session) {
             .eq('user_id', session.user.id);
           if (erroGrupo) throw erroGrupo;
 
-          // Atualiza o item individual garantindo o id E user_id
           const { error: erroIndividual } = await supabase
             .from('transacoes')
             .update({ descricao, status, data, data_vencimento: dataVencimento || null })
@@ -92,7 +90,6 @@ export function useTransactions(session) {
             .eq('user_id', session.user.id);
           if (erroIndividual) throw erroIndividual;
         } else {
-          // Atualiza lançamento único garantindo o id E user_id
           const { error } = await supabase
             .from('transacoes')
             .update({
@@ -159,35 +156,32 @@ export function useTransactions(session) {
 
       if (limparFormularioCallback) limparFormularioCallback();
       await buscarTransacoes();
-      toast.success('Lançamento guardado com sucesso!');
+      notify.success('Lançamento guardado com sucesso!');
     } catch (err) {
       console.error('Erro ao guardar lançamento:', err);
-      alert('Erro ao guardar as informações na base de dados.');
+      notify.error('Erro ao guardar as informações na base de dados.');
     }
   };
 
-  // 3. Excluir uma transação (garantindo o filtro por user_id)
+  // 3. Excluir uma transação
   const excluirTransacao = async (idExclusaoConfirmar, apagarEmLote, grupoIdAlvo, editandoId, limparFormularioCallback) => {
     if (!idExclusaoConfirmar || !session?.user?.id) return;
     try {
-      // Inicia a query de exclusão sempre limitada ao ID do utilizador conectado
       let query = supabase
         .from('transacoes')
         .delete()
         .eq('user_id', session.user.id);
 
-      // Se o utilizador escolheu apagar a série inteira e o item tem grupo
       if (apagarEmLote && grupoIdAlvo) {
         query = query.eq('grupo_id', grupoIdAlvo);
       } else {
-        // Apaga apenas o item específico selecionado
         query = query.eq('id', idExclusaoConfirmar);
       }
 
       const { error } = await query;
       if (error) throw error;
       
-      toast.success(apagarEmLote ? 'Série de lançamentos removida com sucesso!' : 'Lançamento removido.');
+      notify.success(apagarEmLote ? 'Série de lançamentos removida com sucesso!' : 'Lançamento removido.');
       
       if (editandoId === idExclusaoConfirmar && limparFormularioCallback) {
         limparFormularioCallback();
@@ -195,7 +189,7 @@ export function useTransactions(session) {
       await buscarTransacoes();
     } catch (error) {
       console.error('Erro de exclusão:', error);
-      toast.error('Erro ao excluir registo.');
+      notify.error('Erro ao excluir registo.');
     }
   };
 
