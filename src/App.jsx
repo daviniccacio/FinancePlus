@@ -26,6 +26,15 @@ import Configuracoes from './components/Config';
 // Registro do plugin GSAP para React
 gsap.registerPlugin(useGSAP);
 
+/**
+ * PALETA DE CORES PERSONALIZADA:
+ * 1. Evergreen:       #273C2C
+ * 2. Dim Grey:        #626868
+ * 3. Rosy Granite:    #939196
+ * 4. Thistle:         #D3C1D2
+ * 5. Lavender Veil:   #FFE2FE
+ */
+
 export default function App() {
   const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
   
@@ -60,7 +69,7 @@ export default function App() {
   const [limites, setLimites] = useState({});
   const [dark, setDark] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('theme') === 'dark';
-    return false;
+    return true; // Padrão escuro ativado para harmonizar com a paleta
   });
 
   // 🌟 ANIMAÇÃO GSAP: Entrada automática em qualquer troca de rota
@@ -246,24 +255,24 @@ export default function App() {
 
   function exportarPDF() {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const azulInstitucional = [37, 99, 235];
+    const verdeEvergreen = [39, 60, 44];
     const competenceFormatada = filtroCompetencia ? filtroCompetencia.split('-').reverse().join('/') : 'Geral';
 
-    doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.textColor = azulInstitucional[0], azulInstitucional[1], azulInstitucional[2];
+    doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.textColor = verdeEvergreen[0], verdeEvergreen[1], verdeEvergreen[2];
     doc.text("GESTOR FINANCEIRO", 14, 20);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.textColor = 100, 116, 139;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.textColor = 98, 104, 104;
     doc.text(`Relatório de Movimentação Mensal - Período: ${competenceFormatada}`, 14, 26);
     doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 150, 26);
 
-    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5); doc.line(14, 30, 196, 30);
-    doc.setFillColor(248, 250, 252); doc.roundedRect(14, 35, 182, 22, 3, 3, "F");
+    doc.setDrawColor(39, 60, 44); doc.setLineWidth(0.5); doc.line(14, 30, 196, 30);
+    doc.setFillColor(245, 243, 245); doc.roundedRect(14, 35, 182, 22, 3, 3, "F");
 
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.textColor = 148, 163, 184;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.textColor = 98, 104, 104;
     doc.text("TOTAL ENTRADAS", 22, 41); doc.text("TOTAL SAÍDAS", 82, 41); doc.text("SALDO DO PERÍODO", 142, 41);
 
-    doc.setFontSize(12); doc.textColor = 22, 163, 74; doc.text(`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 22, 50);
-    doc.textColor = 220, 38, 38; doc.text(`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 82, 50);
-    doc.textColor = saldoAtual >= 0 ? 37 : 234, saldoAtual >= 0 ? 99 : 88, saldoAtual >= 0 ? 235 : 12;
+    doc.setFontSize(12); doc.textColor = 16, 185, 129; doc.text(`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 22, 50);
+    doc.textColor = 244, 63, 94; doc.text(`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 82, 50);
+    doc.textColor = saldoAtual >= 0 ? 16 : 244, saldoAtual >= 0 ? 185 : 63, saldoAtual >= 0 ? 129 : 94;
     doc.text(`R$ ${saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 142, 50);
 
     const canalLinhas = transacoesFiltradas.map(t => [
@@ -275,12 +284,12 @@ export default function App() {
     autoTable(doc, {
       startY: 64, head: [["Data Lanc.", "Vencimento", "Descrição", "Categoria", "Valor", "Status"]], body: canalLinhas,
       margin: { left: 14, right: 14 }, theme: 'striped',
-      headStyles: { fillColor: azulInstitucional, textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold', halign: 'left' },
-      bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85] }, alternateRowStyles: { fillColor: [248, 250, 252] },
+      headStyles: { fillColor: verdeEvergreen, textColor: [255, 226, 254], fontSize: 9, fontStyle: 'bold', halign: 'left' },
+      bodyStyles: { fontSize: 8.5, textColor: [39, 60, 44] }, alternateRowStyles: { fillColor: [245, 243, 245] },
       didParseCell: function (data) {
         if (data.section === 'body' && data.column.index === 4) {
           const textoValor = data.cell.raw || '';
-          data.cell.styles.textColor = textoValor.startsWith('+') ? [22, 163, 74] : [220, 38, 38];
+          data.cell.styles.textColor = textoValor.startsWith('+') ? [16, 185, 129] : [244, 63, 94];
           data.cell.styles.fontStyle = 'bold';
         }
       }
@@ -293,10 +302,16 @@ export default function App() {
   // Loader de verificação inicial de sessão
   if (carregandoSessao) {
     return (
-      <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 flex items-center justify-center">
+      <div 
+        style={{ backgroundColor: '#1a281e', color: '#FFE2FE' }} 
+        className="min-h-screen flex items-center justify-center font-sans"
+      >
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs text-neutral-500 font-medium">A carregar o FinancePlus...</p>
+          <div 
+            style={{ borderColor: '#D3C1D2', borderTopColor: 'transparent' }} 
+            className="w-8 h-8 border-4 rounded-full animate-spin"
+          />
+          <p style={{ color: '#D3C1D2' }} className="text-xs font-semibold">A carregar o FinancePlus...</p>
         </div>
       </div>
     );
@@ -310,9 +325,9 @@ export default function App() {
           position="bottom-right" 
           toastOptions={{
             style: {
-              background: dark ? '#18181b' : '#ffffff',
-              color: dark ? '#f4f4f5' : '#18181b',
-              border: dark ? '1px solid #27272a' : '1px solid #e4e4e7',
+              background: '#161e18',
+              color: '#FFE2FE',
+              border: '1px solid #273C2C',
               fontSize: '12px',
               borderRadius: '12px',
             },
@@ -324,16 +339,19 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-start transition-colors duration-200">
+    <div 
+      style={{ backgroundColor: '#1a281e', color: '#FFE2FE' }} 
+      className="min-h-screen flex items-start transition-colors duration-200 font-sans"
+    >
       
       {/* Toaster Dinâmico */}
       <Toaster 
         position="bottom-right" 
         toastOptions={{
           style: {
-            background: dark ? '#18181b' : '#ffffff',
-            color: dark ? '#f4f4f5' : '#18181b',
-            border: dark ? '1px solid #27272a' : '1px solid #e4e4e7',
+            background: '#161e18',
+            color: '#FFE2FE',
+            border: '1px solid #273C2C',
             fontSize: '12px',
             borderRadius: '12px',
           },
@@ -367,8 +385,8 @@ export default function App() {
                   <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center min-h-12">
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Painel de Controle</h2>
-                        <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Análise visual e estatística consolidada.</p>
+                        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">Painel de Controle</h2>
+                        <p style={{ color: '#D3C1D2' }} className="text-xs font-medium">Análise visual e estatística consolidada.</p>
                       </div>
                     </div>
                     <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
@@ -388,10 +406,14 @@ export default function App() {
                   <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center min-h-12">
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Lançamentos</h2>
-                        <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Histórico detalhado das transações.</p>
+                        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">Lançamentos</h2>
+                        <p style={{ color: '#D3C1D2' }} className="text-xs font-medium">Histórico detalhado das transações.</p>
                       </div>
-                      <button onClick={() => setIsModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer">
+                      <button 
+                        onClick={() => setIsModalAberto(true)} 
+                        style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                      >
                         <Plus className="w-4 h-4" /> Novo Lançamento
                       </button>
                     </div>
@@ -413,8 +435,8 @@ export default function App() {
                   <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center min-h-12">
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Ajustes</h2>
-                        <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium">Gerencie preferências e segurança.</p>
+                        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">Ajustes</h2>
+                        <p style={{ color: '#D3C1D2' }} className="text-xs font-medium">Gerencie preferências e segurança.</p>
                       </div>
                     </div>
                     <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />

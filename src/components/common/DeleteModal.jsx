@@ -1,54 +1,129 @@
 // src/components/DeleteModal.jsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Trash2 } from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+
+gsap.registerPlugin(useGSAP);
+
+/**
+ * PALETA DE CORES PERSONALIZADA:
+ * 1. Evergreen:       #273C2C
+ * 2. Dim Grey:        #626868
+ * 3. Rosy Granite:    #939196
+ * 4. Thistle:         #D3C1D2
+ * 5. Lavender Veil:   #FFE2FE
+ */
 
 export default function DeleteModal({ grupoId, setIdExclusaoConfirmar, ejecutarExclusao }) {
-  // Estado local para controlar se o utilizador marcou a opção de apagar a série inteira
   const [apagarEmLote, setApagarEmLote] = useState(false);
+  
+  const backdropRef = useRef(null);
+  const modalBoxRef = useRef(null);
+
+  // 🌟 GSAP: Entrada do modal com slide-down elástico e opacidade
+  useGSAP(() => {
+    gsap.fromTo(
+      backdropRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.25, ease: 'power2.out' }
+    );
+
+    gsap.fromTo(
+      modalBoxRef.current,
+      { y: -40, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.3)' }
+    );
+  }, { scope: backdropRef });
+
+  // Interceptador para fechar com animação suave de saída
+  const fecharComAnimacao = (callbackAcao) => {
+    gsap.to(modalBoxRef.current, {
+      y: -25,
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.2,
+      ease: 'power2.in',
+    });
+
+    gsap.to(backdropRef.current, {
+      opacity: 0,
+      duration: 0.2,
+      onComplete: () => {
+        if (callbackAcao) {
+          callbackAcao();
+        } else {
+          setIdExclusaoConfirmar(null);
+        }
+      },
+    });
+  };
 
   return (
-    <div className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-xl w-full max-w-sm space-y-4 text-center transition-colors duration-200">
+    <div 
+      ref={backdropRef}
+      className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-hidden font-sans"
+    >
+      <div 
+        ref={modalBoxRef}
+        style={{
+          backgroundColor: '#161e18',
+          borderColor: '#273C2C',
+          color: '#FFE2FE'
+        }}
+        className="p-6 rounded-3xl border shadow-2xl w-full max-w-sm space-y-4 text-center transition-colors duration-200"
+      >
         
         <div className="flex flex-col items-center gap-2">
-          <div className="bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-100 dark:border-red-900/40 text-red-500">
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400">
             <Trash2 className="w-6 h-6" />
           </div>
-          <h2 className="font-bold text-sm text-neutral-800 dark:text-zinc-100">Confirmar Exclusão</h2>
-          <p className="text-xs text-neutral-500 dark:text-zinc-400">
+          <h2 style={{ color: '#FFE2FE' }} className="font-bold text-base">Confirmar Exclusão</h2>
+          <p style={{ color: '#939196' }} className="text-xs font-medium leading-relaxed">
             Tem certeza de que deseja apagar permanentemente este lançamento? Esta ação não pode ser desfeita.
           </p>
         </div>
 
-        {/* 🌟 Caixa de seleção condicional: só aparece se o lançamento pertencer a um grupo/série */}
+        {/* Caixa de seleção condicional para exclusão em grupo */}
         {grupoId && (
-          <div className="flex items-center gap-2 p-3 bg-neutral-50 dark:bg-zinc-800/60 rounded-xl border border-gray-100 dark:border-zinc-800 text-left">
+          <div 
+            style={{
+              backgroundColor: 'rgba(39, 60, 44, 0.25)',
+              borderColor: '#626868'
+            }}
+            className="flex items-center gap-2.5 p-3 rounded-2xl border text-left"
+          >
             <input
               type="checkbox"
               id="apagarLoteCheck"
               checked={apagarEmLote}
               onChange={(e) => setApagarEmLote(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+              className="w-4 h-4 rounded border-[#626868] focus:ring-0 cursor-pointer accent-[#D3C1D2]"
             />
-            <label htmlFor="apagarLoteCheck" className="text-xs text-neutral-600 dark:text-zinc-300 font-medium cursor-pointer select-none">
+            <label 
+              htmlFor="apagarLoteCheck" 
+              style={{ color: '#D3C1D2' }}
+              className="text-xs font-medium cursor-pointer select-none leading-snug"
+            >
               Apagar também todos os pagamentos futuros desta mesma série/grupo.
             </label>
           </div>
         )}
 
-        <div className="flex justify-center gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+        <div style={{ borderColor: '#273C2C' }} className="flex justify-center gap-2 pt-3 border-t">
           <button 
             type="button" 
-            onClick={() => setIdExclusaoConfirmar(null)} 
-            className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-neutral-600 dark:text-zinc-300 rounded-xl text-xs font-semibold transition-colors w-full cursor-pointer"
+            onClick={() => fecharComAnimacao(null)} 
+            style={{ backgroundColor: '#273C2C', color: '#D3C1D2' }}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold transition-opacity hover:opacity-80 w-full cursor-pointer"
           >
             Cancelar
           </button>
           
           <button 
             type="button" 
-            onClick={() => ejecutarExclusao(apagarEmLote)} 
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold transition-all shadow-sm w-full active:scale-[0.99] cursor-pointer"
+            onClick={() => fecharComAnimacao(() => ejecutarExclusao(apagarEmLote))} 
+            className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-md w-full active:scale-[0.98] cursor-pointer"
           >
             Excluir
           </button>

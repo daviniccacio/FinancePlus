@@ -1,4 +1,31 @@
-import { PlusCircle, FileText, FolderOpen, Tag, CreditCard, AlertTriangle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+// src/components/TransactionTable.jsx
+import { useRef, useMemo } from 'react';
+import { 
+  PlusCircle, 
+  FileText, 
+  FolderOpen, 
+  Tag, 
+  CreditCard, 
+  AlertTriangle, 
+  Pencil, 
+  Trash2, 
+  ChevronLeft, 
+  ChevronRight 
+} from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+
+// Registro obrigatório do plugin GSAP
+gsap.registerPlugin(useGSAP);
+
+/**
+ * PALETA DE CORES PERSONALIZADA:
+ * 1. Evergreen:       #273C2C
+ * 2. Dim Grey:        #626868
+ * 3. Rosy Granite:    #939196
+ * 4. Thistle:         #D3C1D2
+ * 5. Lavender Veil:   #FFE2FE
+ */
 
 export default function TransactionTable({ 
   carregando, 
@@ -11,6 +38,40 @@ export default function TransactionTable({
   prepararEdicao, 
   setIdExclusaoConfirmar 
 }) {
+  const containerRef = useRef(null);
+
+  // 🌟 Gera uma chave baseada nos IDs para impedir re-renders de digitação no formulário
+  const idsTransacoes = useMemo(() => {
+    return transacoesPaginadas.map(t => `${t.id}-${t.valor}-${t.status}`).join('|');
+  }, [transacoesPaginadas]);
+
+  // 🌟 GSAP: Animação fluida executada apenas quando o conteúdo real muda
+  useGSAP(() => {
+    if (!carregando && transacoesPaginadas.length > 0) {
+      gsap.fromTo(
+        '.transaction-row',
+        { opacity: 0, y: -18, scaleY: 0.96 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          scaleY: 1, 
+          duration: 0.35, 
+          stagger: 0.05,
+          ease: 'power2.out',
+          clearProps: 'transform'
+        }
+      );
+    }
+  }, { dependencies: [idsTransacoes, carregando, paginaAtual], scope: containerRef });
+
+  // Resposta tátil para botões
+  const animarClique = (e) => {
+    gsap.fromTo(
+      e.currentTarget,
+      { scale: 0.9 },
+      { scale: 1, duration: 0.25, ease: 'back.out(2)' }
+    );
+  };
 
   function formatarDataBRL(dataString) {
     if (!dataString) return '-';
@@ -29,38 +90,67 @@ export default function TransactionTable({
     const diferencaTempo = vencimento.getTime() - hoje.getTime();
     const diferencaDias = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
 
-    if (diferencaDias < 0) return { rotulo: 'Atrasado', cor: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30' };
-    if (diferencaDias === 0) return { rotulo: 'Vence Hoje', cor: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-900/30 animate-pulse' };
-    if (diferencaDias <= 3) return { rotulo: `Próximo (${diferencaDias} d)`, cor: 'text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 border-orange-100 dark:border-orange-900/30' };
+    if (diferencaDias < 0) return { rotulo: 'Atrasado', cor: 'text-rose-400 bg-rose-950/30 border-rose-900/40' };
+    if (diferencaDias === 0) return { rotulo: 'Vence Hoje', cor: 'text-amber-400 bg-amber-950/30 border-amber-900/40 animate-pulse' };
+    if (diferencaDias <= 3) return { rotulo: `Próximo (${diferencaDias} d)`, cor: 'text-orange-400 bg-orange-950/30 border-orange-900/40' };
     return null;
   }
 
   return (
-    <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200/60 dark:border-zinc-800 overflow-hidden shadow-sm w-full transition-colors duration-200">
+    <section 
+      ref={containerRef} 
+      style={{
+        backgroundColor: '#161e18',
+        borderColor: '#273C2C'
+      }}
+      className="rounded-3xl border overflow-hidden shadow-lg w-full transition-colors duration-200 font-sans"
+    >
       
-      {/* Cabeçalho limpo apenas com Novo Lançamento e PDF */}
-      <div className="p-4 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center gap-2">
-        <h2 className="font-bold text-xs md:text-sm text-gray-900 dark:text-zinc-100">Histórico de Lançamentos</h2>
+      {/* Cabeçalho */}
+      <div style={{ borderColor: '#273C2C' }} className="p-4 border-b flex justify-between items-center gap-2">
+        <h2 style={{ color: '#FFE2FE' }} className="font-bold text-xs md:text-sm">Histórico de Lançamentos</h2>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setIsModalAberto(true)} className="flex items-center gap-1 bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-xl hover:bg-blue-600 transition-colors shadow-sm cursor-pointer">
+          <button 
+            type="button" 
+            onClick={(e) => { animarClique(e); setIsModalAberto(true); }} 
+            style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
+            className="flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-xl hover:scale-105 transition-all shadow-md cursor-pointer"
+          >
             <PlusCircle className="w-3.5 h-3.5" /> Novo Lançamento
           </button>
-          <button type="button" onClick={exportarPDF} className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm cursor-pointer">
+          <button 
+            type="button" 
+            onClick={(e) => { animarClique(e); exportarPDF(); }} 
+            style={{
+              backgroundColor: 'rgba(211, 193, 210, 0.15)',
+              borderColor: '#D3C1D2',
+              color: '#D3C1D2'
+            }}
+            className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl border hover:bg-[#D3C1D2]/20 transition-all shadow-xs cursor-pointer"
+          >
             <FileText className="w-3.5 h-3.5" /> PDF
           </button>
         </div>
       </div>
 
       {transacoesPaginadas.length === 0 && !carregando ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-zinc-900">
-          <div className="p-4 bg-neutral-50 dark:bg-zinc-800 rounded-2xl border border-gray-100 dark:border-zinc-700 mb-3 text-neutral-400 dark:text-zinc-500">
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div 
+            style={{ backgroundColor: '#273C2C', borderColor: '#626868' }}
+            className="p-4 rounded-2xl border mb-3 text-[#939196]"
+          >
             <FolderOpen className="w-8 h-8" />
           </div>
-          <h3 className="text-sm font-bold text-neutral-700 dark:text-zinc-300">Nenhum lançamento por aqui</h3>
-          <p className="text-xs text-neutral-400 dark:text-zinc-500 mt-1 max-w-sm font-medium leading-relaxed">
+          <h3 style={{ color: '#FFE2FE' }} className="text-sm font-bold">Nenhum lançamento por aqui</h3>
+          <p style={{ color: '#939196' }} className="text-xs mt-1 max-w-sm font-medium leading-relaxed">
             Não encontramos transações cadastradas ou correspondentes aos filtros ativos neste período.
           </p>
-          <button type="button" onClick={() => setIsModalAberto(true)} className="mt-4 flex items-center gap-1 bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors shadow-sm active:scale-95 cursor-pointer">
+          <button 
+            type="button" 
+            onClick={(e) => { animarClique(e); setIsModalAberto(true); }} 
+            style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
+            className="mt-4 flex items-center gap-1 text-xs font-bold px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-md cursor-pointer"
+          >
             <PlusCircle className="w-3.5 h-3.5" /> Cadastrar transação
           </button>
         </div>
@@ -69,7 +159,14 @@ export default function TransactionTable({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-neutral-50 dark:bg-zinc-800/50 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-zinc-500 border-b border-gray-100 dark:border-zinc-800">
+                <tr 
+                  style={{
+                    backgroundColor: 'rgba(39, 60, 44, 0.35)',
+                    borderColor: '#273C2C',
+                    color: '#D3C1D2'
+                  }}
+                  className="text-[10px] font-bold uppercase tracking-wider border-b"
+                >
                   <th className="p-3.5">Data Lanc. / Venc.</th>
                   <th className="p-3.5">Descrição / Informações</th>
                   <th className="p-3.5">Valor</th>
@@ -77,26 +174,26 @@ export default function TransactionTable({
                   <th className="p-3.5 text-center">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-xs">
+              <tbody style={{ borderColor: '#273C2C' }} className="divide-y text-xs">
                 {carregando ? (
                   [1, 2, 3, 4].map((i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="p-3.5">
-                        <div className="h-3.5 bg-neutral-200 dark:bg-zinc-700 rounded w-16 mb-1"></div>
-                        <div className="h-3 bg-neutral-100 dark:bg-zinc-800 rounded w-20"></div>
+                        <div style={{ backgroundColor: '#273C2C' }} className="h-3.5 rounded w-16 mb-1"></div>
+                        <div style={{ backgroundColor: '#626868' }} className="h-3 rounded w-20"></div>
                       </td>
                       <td className="p-3.5">
-                        <div className="h-4 bg-neutral-200 dark:bg-zinc-700 rounded w-44 mb-1"></div>
-                        <div className="h-3 bg-neutral-100 dark:bg-zinc-800 rounded w-28"></div>
+                        <div style={{ backgroundColor: '#273C2C' }} className="h-4 rounded w-44 mb-1"></div>
+                        <div style={{ backgroundColor: '#626868' }} className="h-3 rounded w-28"></div>
                       </td>
                       <td className="p-3.5">
-                        <div className="h-4 bg-neutral-200 dark:bg-zinc-700 rounded w-16"></div>
+                        <div style={{ backgroundColor: '#273C2C' }} className="h-4 rounded w-16"></div>
                       </td>
                       <td className="p-3.5">
-                        <div className="h-4 bg-neutral-200 dark:bg-zinc-700 rounded w-10 mx-auto"></div>
+                        <div style={{ backgroundColor: '#273C2C' }} className="h-4 rounded w-10 mx-auto"></div>
                       </td>
                       <td className="p-3.5">
-                        <div className="h-6 bg-neutral-100 dark:bg-zinc-800 rounded-lg w-14 mx-auto"></div>
+                        <div style={{ backgroundColor: '#626868' }} className="h-6 rounded-lg w-14 mx-auto"></div>
                       </td>
                     </tr>
                   ))
@@ -104,30 +201,57 @@ export default function TransactionTable({
                   transacoesPaginadas.map((t) => {
                     const alertaVencimento = verificarStatusVencimento(t.data_vencimento, t.status);
                     return (
-                      <tr key={t.id} className="hover:bg-neutral-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                      <tr 
+                        key={t.id} 
+                        className="transaction-row transition-colors hover:bg-[#273C2C]/30"
+                      >
                         <td className="p-3.5 whitespace-nowrap">
-                          <div className="font-bold text-xs text-neutral-700 dark:text-zinc-300">{formatarDataBRL(t.data)}</div>
-                          {t.data_vencimento && <div className="text-xs font-semibold text-neutral-400 dark:text-zinc-500 mt-0.5">Validade: {formatarDataBRL(t.data_vencimento)}</div>}
+                          <div style={{ color: '#FFE2FE' }} className="font-bold text-xs">{formatarDataBRL(t.data)}</div>
+                          {t.data_vencimento && (
+                            <div style={{ color: '#939196' }} className="text-xs font-semibold mt-0.5">
+                              Validade: {formatarDataBRL(t.data_vencimento)}
+                            </div>
+                          )}
                         </td>
                         <td className="p-3.5">
-                          <div className="font-semibold text-neutral-900 dark:text-zinc-100 text-sm">{t.descricao}</div>
-                          <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px]">
-                            <span className="flex items-center gap-1 bg-neutral-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md font-medium text-neutral-500 dark:text-zinc-400">
-                              <Tag className="w-3 h-3 text-neutral-400 dark:text-zinc-500" /> {t.categoria}
+                          <div style={{ color: '#FFE2FE' }} className="font-semibold text-sm">{t.descricao}</div>
+                          <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px]">
+                            <span 
+                              style={{
+                                backgroundColor: 'rgba(39, 60, 44, 0.6)',
+                                borderColor: '#626868',
+                                color: '#D3C1D2'
+                              }}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-md font-medium border"
+                            >
+                              <Tag className="w-3 h-3 text-[#939196]" /> {t.categoria}
                             </span>
                             {t.dados_pagamento && (
-                              <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-md font-medium border border-blue-100 dark:border-blue-900/40">
-                                <CreditCard className="w-3 h-3 text-blue-400" /> {t.dados_pagamento}
+                              <span 
+                                style={{
+                                  backgroundColor: 'rgba(211, 193, 210, 0.15)',
+                                  borderColor: 'rgba(211, 193, 210, 0.3)',
+                                  color: '#FFE2FE'
+                                }}
+                                className="flex items-center gap-1 px-2 py-0.5 rounded-md font-medium border"
+                              >
+                                <CreditCard className="w-3 h-3 text-[#D3C1D2]" /> {t.dados_pagamento}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className={`p-3.5 font-bold whitespace-nowrap text-sm ${t.tipo === 'Entrada' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                        <td className={`p-3.5 font-bold whitespace-nowrap text-sm ${t.tipo === 'Entrada' ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {t.tipo === 'Entrada' ? '+ ' : '- '}R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap space-y-1">
                           <div>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${t.status === 'Pago' ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900/40' : 'bg-orange-50 dark:bg-orange-950/30 text-orange-500 dark:text-orange-400 border-orange-200 dark:border-orange-900/40'}`}>{t.status}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                              t.status === 'Pago' 
+                                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/40' 
+                                : 'bg-amber-950/40 text-amber-400 border-amber-900/40'
+                            }`}>
+                              {t.status}
+                            </span>
                           </div>
                           {alertaVencimento && (
                             <div className="flex justify-center">
@@ -139,8 +263,22 @@ export default function TransactionTable({
                         </td>
                         <td className="p-3.5 text-center">
                           <div className="flex justify-center gap-1.5">
-                            <button type="button" onClick={() => prepararEdicao(t)} className="p-1.5 bg-neutral-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700 hover:bg-neutral-100 dark:hover:bg-zinc-700 text-neutral-500 dark:text-zinc-400 transition-colors cursor-pointer"><Pencil className="w-3.5 h-3.5" /></button>
-                            <button type="button" onClick={() => setIdExclusaoConfirmar(t.id)} className="p-1.5 bg-neutral-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700 hover:bg-neutral-100 dark:hover:bg-zinc-700 text-red-500 dark:text-red-400 transition-colors cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                            <button 
+                              type="button" 
+                              onClick={(e) => { animarClique(e); prepararEdicao(t); }} 
+                              style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#D3C1D2' }}
+                              className="p-1.5 rounded-lg border hover:bg-[#626868]/40 transition-colors cursor-pointer"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={(e) => { animarClique(e); setIdExclusaoConfirmar(t.id); }} 
+                              style={{ backgroundColor: '#273C2C', borderColor: '#626868' }}
+                              className="p-1.5 rounded-lg border hover:bg-[#626868]/40 text-rose-400 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -152,22 +290,31 @@ export default function TransactionTable({
           </div>
 
           {!carregando && (
-            <div className="p-3 bg-neutral-50 dark:bg-zinc-800/40 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-neutral-500 dark:text-zinc-400 text-xs">
-              <span>Página <b>{paginaAtual}</b> de {totalPaginas}</span>
+            <div 
+              style={{
+                backgroundColor: 'rgba(39, 60, 44, 0.25)',
+                borderColor: '#273C2C',
+                color: '#939196'
+              }}
+              className="p-3 border-t flex items-center justify-between text-xs"
+            >
+              <span>Página <b style={{ color: '#FFE2FE' }}>{paginaAtual}</b> de {totalPaginas}</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={paginaAtual === 1}
-                  onClick={(e) => { e.stopPropagation(); setPaginaAtual(p => p - 1); }}
-                  className="p-1 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-zinc-700 cursor-pointer text-gray-700 dark:text-zinc-300"
+                  onClick={(e) => { animarClique(e); e.stopPropagation(); setPaginaAtual(p => p - 1); }}
+                  style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#FFE2FE' }}
+                  className="p-1 border rounded-lg disabled:opacity-30 hover:bg-[#626868]/40 cursor-pointer"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
                   disabled={paginaAtual === totalPaginas}
-                  onClick={(e) => { e.stopPropagation(); setPaginaAtual(p => p + 1); }}
-                  className="p-1 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-zinc-700 cursor-pointer text-gray-700 dark:text-zinc-300"
+                  onClick={(e) => { animarClique(e); e.stopPropagation(); setPaginaAtual(p => p + 1); }}
+                  style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#FFE2FE' }}
+                  className="p-1 border rounded-lg disabled:opacity-30 hover:bg-[#626868]/40 cursor-pointer"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>

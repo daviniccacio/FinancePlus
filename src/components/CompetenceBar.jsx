@@ -1,4 +1,21 @@
-import { ChevronLeft, ChevronRight, Calendar, Layers } from 'lucide-react';
+// src/components/CompetenceBar.jsx
+import { useRef } from 'react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import CustomSelect from './common/CustomSelect';
+
+// Registro do plugin GSAP para React
+gsap.registerPlugin(useGSAP);
+
+/**
+ * PALETA DE CORES PERSONALIZADA:
+ * 1. Evergreen:       #273C2C
+ * 2. Dim Grey:        #626868
+ * 3. Rosy Granite:    #939196
+ * 4. Thistle:         #D3C1D2
+ * 5. Lavender Veil:   #FFE2FE
+ */
 
 const CATEGORIAS_PADRAO = [
   'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 
@@ -8,14 +25,47 @@ const CATEGORIAS_PADRAO = [
 export default function CompetenceBar({ 
   filtroCompetencia, 
   setFiltroCompetencia, 
-  filtroPeriodo,       
+  filtroPeriodo,     
   setFiltroPeriodo,    
   filtroCategoria,    
   setFiltroCategoria,  
   setPaginaAtual 
 }) {
+  const containerRef = useRef(null);
+  const pillRef = useRef(null);
+  const buttonsRef = useRef([]);
 
-  // Altera o mês caso o período selecionado seja o mensal
+  const periodos = [
+    { id: 'mensal', label: 'Mensal' },
+    { id: '3meses', label: '3 Meses' },
+    { id: 'ano', label: 'Este Ano' },
+    { id: 'tudo', label: 'Tudo' },
+  ];
+
+  // 🌟 GSAP: Animação da Pílula Deslizante ao alternar o período
+  useGSAP(() => {
+    const indiceAtivo = periodos.findIndex((p) => p.id === filtroPeriodo);
+    const botaoAtivo = buttonsRef.current[indiceAtivo];
+
+    if (botaoAtivo && pillRef.current) {
+      gsap.to(pillRef.current, {
+        x: botaoAtivo.offsetLeft,
+        width: botaoAtivo.offsetWidth,
+        duration: 0.35,
+        ease: 'power3.out',
+      });
+    }
+  }, { dependencies: [filtroPeriodo], scope: containerRef });
+
+  // Resposta tátil ao clicar nos botões
+  const animarClique = (e) => {
+    gsap.fromTo(
+      e.currentTarget,
+      { scale: 0.92 },
+      { scale: 1, duration: 0.25, ease: 'back.out(2)' }
+    );
+  };
+
   function alterarCompetencia(offset) {
     if (!filtroCompetencia) {
       const hoje = new Date();
@@ -45,77 +95,96 @@ export default function CompetenceBar({
     return `${meses[Number(mes) - 1]} de ${ano}`;
   }
 
+  // Opções para o seletor personalizado de categorias
+  const opcoesCategoria = [
+    { value: '', label: 'Todas as Categorias' },
+    ...CATEGORIAS_PADRAO.map((cat) => ({ value: cat, label: cat }))
+  ];
+
   return (
-    <section className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200/60 dark:border-zinc-800 shadow-sm gap-4 transition-colors duration-200">
+    <section 
+      ref={containerRef} 
+      style={{
+        backgroundColor: '#161e18',
+        borderColor: '#273C2C',
+      }}
+      className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between p-4 rounded-3xl border shadow-lg gap-4 font-sans transition-colors duration-200 relative z-30"
+    >
       
       {/* SEÇÃO DA ESQUERDA: Filtros de Tempo */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
         
-        {/* Seletor de Tipo de Período */}
-        <div className="flex items-center gap-1 bg-neutral-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-gray-200/30 dark:border-zinc-700 w-full sm:w-auto overflow-x-auto">
-          <button
-            onClick={() => { setFiltroPeriodo('mensal'); setPaginaAtual(1); }}
-            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-              filtroPeriodo === 'mensal' 
-                ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200'
-            }`}
-          >
-            Mensal
-          </button>
-          <button
-            onClick={() => { setFiltroPeriodo('3meses'); setPaginaAtual(1); }}
-            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-              filtroPeriodo === '3meses' 
-                ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200'
-            }`}
-          >
-            3 Meses
-          </button>
-          <button
-            onClick={() => { setFiltroPeriodo('ano'); setPaginaAtual(1); }}
-            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-              filtroPeriodo === 'ano' 
-                ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200'
-            }`}
-          >
-            Este Ano
-          </button>
-          <button
-            onClick={() => { setFiltroPeriodo('tudo'); setPaginaAtual(1); }}
-            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-              filtroPeriodo === 'tudo' 
-                ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200'
-            }`}
-          >
-            Tudo
-          </button>
+        {/* Seletor de Tipo de Período com Pílula Deslizante */}
+        <div 
+          style={{
+            backgroundColor: 'rgba(39, 60, 44, 0.35)',
+            borderColor: '#273C2C'
+          }}
+          className="relative flex items-center p-1 rounded-2xl border w-full sm:w-auto overflow-x-auto"
+        >
+          {/* Pílula de fundo que desliza suavemente */}
+          <div
+            ref={pillRef}
+            style={{ backgroundColor: '#D3C1D2' }}
+            className="absolute top-1 bottom-1 left-0 rounded-xl shadow-md pointer-events-none z-0"
+          />
+
+          {periodos.map((p, index) => {
+            const estaAtivo = filtroPeriodo === p.id;
+            return (
+              <button
+                key={p.id}
+                ref={(el) => (buttonsRef.current[index] = el)}
+                onClick={(e) => {
+                  animarClique(e);
+                  setFiltroPeriodo(p.id);
+                  setPaginaAtual(1);
+                }}
+                style={{
+                  color: estaAtivo ? '#273C2C' : '#939196'
+                }}
+                className={`relative z-10 text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap hover:text-[#FFE2FE] ${
+                  estaAtivo ? 'font-extrabold' : ''
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Visualizador do Escopo Cronológico + Navegação por Setas */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
           {filtroPeriodo === 'mensal' && (
             <button 
-              onClick={() => alterarCompetencia(-1)} 
-              className="p-1.5 bg-neutral-50 dark:bg-zinc-800 hover:bg-neutral-100 dark:hover:bg-zinc-700 rounded-xl border border-gray-200/40 dark:border-zinc-700 transition-all active:scale-95 text-neutral-600 dark:text-zinc-400 cursor-pointer"
+              type="button"
+              onClick={(e) => { animarClique(e); alterarCompetencia(-1); }} 
+              style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#FFE2FE' }}
+              className="p-2 rounded-xl border hover:border-[#D3C1D2] transition-all active:scale-95 cursor-pointer shadow-xs"
               title="Mês Anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
 
-          <div className="flex items-center gap-2 bg-neutral-50 dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-gray-200/30 dark:border-zinc-700 text-xs font-bold text-neutral-700 dark:text-zinc-300 min-w-40 justify-center shadow-inner">
-            <Calendar className="w-3.5 h-3.5 text-blue-500" />
+          <div 
+            style={{
+              backgroundColor: 'rgba(39, 60, 44, 0.35)',
+              borderColor: '#273C2C',
+              color: '#FFE2FE'
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold min-w-44 justify-center shadow-inner"
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#D3C1D2]" />
             <span>{formatarCompetenciaTexto(filtroCompetencia)}</span>
           </div>
 
           {filtroPeriodo === 'mensal' && (
             <button 
-              onClick={() => alterarCompetencia(1)} 
-              className="p-1.5 bg-neutral-50 dark:bg-zinc-800 hover:bg-neutral-100 dark:hover:bg-zinc-700 rounded-xl border border-gray-200/40 dark:border-zinc-700 transition-all active:scale-95 text-neutral-600 dark:text-zinc-400 cursor-pointer"
+              type="button"
+              onClick={(e) => { animarClique(e); alterarCompetencia(1); }} 
+              style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#FFE2FE' }}
+              className="p-2 rounded-xl border hover:border-[#D3C1D2] transition-all active:scale-95 cursor-pointer shadow-xs"
               title="Próximo Mês"
             >
               <ChevronRight className="w-4 h-4" />
@@ -124,23 +193,14 @@ export default function CompetenceBar({
         </div>
       </div>
 
-      {/* SEÇÃO DA DIREITA: Novo Filtro por Categoria */}
-      <div className="flex items-center gap-2 w-full lg:w-auto border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100 dark:border-zinc-800">
-        <div className="flex items-center gap-2 bg-neutral-50 dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-gray-200/40 dark:border-zinc-700 text-xs font-bold text-neutral-600 dark:text-zinc-400 w-full lg:w-60">
-          <Layers className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-          <select
-            value={filtroCategoria}
-            onChange={(e) => { setFiltroCategoria(e.target.value); setPaginaAtual(1); }}
-            className="bg-transparent text-neutral-700 dark:text-zinc-200 outline-none w-full cursor-pointer font-semibold text-xs"
-          >
-            <option value="" className="bg-white dark:bg-zinc-900">Todas as Categorias</option>
-            {CATEGORIAS_PADRAO.map((cat) => (
-              <option key={cat} value={cat} className="bg-white dark:bg-zinc-900">
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* SEÇÃO DA DIREITA: Filtro por Categoria via CustomSelect */}
+      <div className="w-full lg:w-60 border-t lg:border-t-0 pt-3 lg:pt-0 border-[#273C2C]">
+        <CustomSelect
+          value={filtroCategoria}
+          onChange={(val) => { setFiltroCategoria(val); setPaginaAtual(1); }}
+          options={opcoesCategoria}
+          placeholder="Todas as Categorias"
+        />
       </div>
 
     </section>

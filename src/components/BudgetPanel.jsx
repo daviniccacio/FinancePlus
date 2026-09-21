@@ -1,19 +1,37 @@
-import { useState, useEffect, useCallback } from 'react';
+// src/components/BudgetPanel.jsx
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import { Target, AlertCircle, CheckCircle2, Pencil, Check, X, Plus, Trash2, Loader2, Wallet } from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
-export default function BudgetPanel({ transacoes = [], limites={}, setLimites }) {
+gsap.registerPlugin(useGSAP);
+
+/**
+ * PALETA DE CORES PERSONALIZADA:
+ * 1. Evergreen:       #273C2C
+ * 2. Dim Grey:        #626868
+ * 3. Rosy Granite:    #939196
+ * 4. Thistle:         #D3C1D2
+ * 5. Lavender Veil:   #FFE2FE
+ */
+
+export default function BudgetPanel({ transacoes = [], limites = {}, setLimites }) {
   const [historicoMetas, setHistoricoMetas] = useState({});
   const [carregandoMetas, setCarregandoMetas] = useState(true);
   const [userId, setUserId] = useState(null);
+
   // Estados de controle para Edição e Criação
   const [categoriaEmEdicao, setCategoriaEmEdicao] = useState(null);
   const [valorTemporario, setValorTemporario] = useState('');
   const [isCriando, setIsCriando] = useState(false);
   const [novaCategoria, setNovaCategoria] = useState('');
   const [novoLimite, setNovoLimite] = useState('');
-  const [novoTipo, setNovoTipo] = useState('orcamento'); // 'orcamento' ou 'meta'
+  const [novoTipo, setNovoTipo] = useState('orcamento');
+
+  const containerRef = useRef(null);
+  const formRef = useRef(null);
 
   // 1. Obter o ID do usuário autenticado
   useEffect(() => {
@@ -28,7 +46,7 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Buscar as configurações do banco (CORRIGIDO: adicionado dependências no useCallback)
+  // 2. Buscar as configurações do banco
   const carregarDadosDasMetas = useCallback(async () => {
     if (!userId) return;
     try {
@@ -58,9 +76,9 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
     } finally {
       setCarregandoMetas(false);
     }
-  }, [userId, setLimites]); // CORREÇÃO AQUI: userId e setLimites adicionados como dependências
+  }, [userId, setLimites]);
 
-  // 3. Buscar histórico total para acumular as "Saídas" das Metas (Memorizada com useCallback)
+  // 3. Buscar histórico total para acumular as "Saídas" das Metas
   const carregarHistoricoGeral = useCallback(async () => {
     if (!userId) return;
     try {
@@ -77,7 +95,6 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
           const cat = t.categoria || 'Outros';
           if (!acumulado[cat]) acumulado[cat] = 0;
           
-          // Conforme combinado: Lançamentos de "Saída" acumulam valor na Meta
           if (t.tipo === 'Saída' || t.tipo?.toLowerCase() === 'saída') {
             acumulado[cat] += t.valor;
           }
@@ -89,7 +106,6 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
     }
   }, [userId]);
 
-  // Efeito responsável por disparar a carga inicial sem travar a renderização síncrona
   useEffect(() => {
     if (userId) {
       const timer = setTimeout(() => {
@@ -100,6 +116,28 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
       return () => clearTimeout(timer);
     }
   }, [userId, carregarDadosDasMetas, carregarHistoricoGeral]);
+
+  // 🌟 GSAP: Animação de entrada dos cards de metas
+  useGSAP(() => {
+    if (!carregandoMetas && Object.keys(limites).length > 0) {
+      gsap.fromTo(
+        '.budget-card',
+        { opacity: 0, y: 20, scale: 0.97 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.08, ease: 'power2.out' }
+      );
+    }
+  }, { dependencies: [carregandoMetas, limites], scope: containerRef });
+
+  // 🌟 GSAP: Animação na exibição do formulário de novo registro
+  useGSAP(() => {
+    if (isCriando && formRef.current) {
+      gsap.fromTo(
+        formRef.current,
+        { opacity: 0, y: -15, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: 'back.out(1.5)' }
+      );
+    }
+  }, { dependencies: [isCriando] });
 
   // 4. Salvar/Atualizar uma meta ou orçamento existente
   const salvarLimite = async (categoria) => {
@@ -128,7 +166,7 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
         [categoria]: { ...prev[categoria], limite: valorNumerico }
       }));
       setCategoriaEmEdicao(null);
-      toast.success('Valor updated com sucesso!');
+      toast.success('Valor atualizado com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar:', error);
       toast.error('Erro ao salvar no banco.');
@@ -163,7 +201,7 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
       setNovaCategoria('');
       setNovoLimite('');
       setIsCriando(false);
-      carregarHistoricoGeral(); // Recarrega totais acumulados
+      carregarHistoricoGeral();
       toast.success('Adicionado com sucesso!');
     } catch (error) {
       console.error('Erro ao criar:', error);
@@ -182,7 +220,6 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
 
       if (error) throw error;
 
-      // Remove do estado local imediatamente para sumir da tela
       setLimites(prev => {
         const copia = { ...prev };
         delete copia[categoria];
@@ -207,25 +244,34 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
 
   if (carregandoMetas) {
     return (
-      <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-gray-200/60 dark:border-zinc-800 flex flex-col items-center justify-center gap-2 text-xs font-medium text-gray-400">
-        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+      <div 
+        style={{ backgroundColor: '#161e18', borderColor: '#273C2C', color: '#D3C1D2' }}
+        className="p-8 rounded-3xl border flex flex-col items-center justify-center gap-2 text-xs font-medium"
+      >
+        <Loader2 className="w-5 h-5 animate-spin text-[#D3C1D2]" />
         Sincronizando metas e orçamentos com a nuvem...
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-gray-200/60 dark:border-zinc-800 shadow-xs space-y-4 transition-colors duration-200">
+    <div 
+      ref={containerRef}
+      style={{ backgroundColor: '#161e18', borderColor: '#273C2C' }}
+      className="p-5 rounded-3xl border shadow-lg space-y-4 font-sans transition-colors duration-200"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-blue-500" />
-          <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
+          <Target className="w-5 h-5 text-[#D3C1D2]" />
+          <h3 style={{ color: '#D3C1D2' }} className="text-xs font-bold uppercase tracking-wider">
             Metas e Orçamentos
           </h3>
         </div>
         <button
+          type="button"
           onClick={() => setIsCriando(!isCriando)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-xl transition-all cursor-pointer"
+          style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-md"
         >
           <Plus className="w-3.5 h-3.5" />
           {isCriando ? 'Fechar' : 'Novo Registro'}
@@ -234,15 +280,25 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isCriando && (
-          <form onSubmit={lidarComCriacaoMeta} className="p-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-zinc-800 bg-linear-to-b from-gray-50/50 to-transparent dark:from-zinc-800/20 flex flex-col space-y-3 col-span-1 md:col-span-2">
-            <div className="text-[11px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Configurar Novo Item</div>
+          <form 
+            ref={formRef}
+            onSubmit={lidarComCriacaoMeta} 
+            style={{ backgroundColor: 'rgba(39, 60, 44, 0.4)', borderColor: '#626868' }}
+            className="p-4 rounded-2xl border-2 border-dashed flex flex-col space-y-3 col-span-1 md:col-span-2 backdrop-blur-xs"
+          >
+            <div style={{ color: '#FFE2FE' }} className="text-[11px] font-bold uppercase tracking-wide">
+              Configurar Novo Item
+            </div>
             
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Tipo de Destinação</label>
+              <label style={{ color: '#D3C1D2' }} className="text-[9px] font-bold uppercase block">
+                Tipo de Destinação
+              </label>
               <select 
                 value={novoTipo} 
                 onChange={(e) => setNovoTipo(e.target.value)}
-                className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100"
+                style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
+                className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#D3C1D2] cursor-pointer"
               >
                 <option value="orcamento">Orçamento Mensal (Limite que renova todo mês)</option>
                 <option value="meta">Meta Cofrinho (Acumula histórico de Saídas independente do mês)</option>
@@ -251,17 +307,53 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Categoria / Nome</label>
-                <input type="text" placeholder="Ex: Viagem, Aluguel" required value={novaCategoria} onChange={(e) => setNovaCategoria(e.target.value)} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100" />
+                <label style={{ color: '#D3C1D2' }} className="text-[9px] font-bold uppercase block">
+                  Categoria / Nome
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: Viagem, Aluguel" 
+                  required 
+                  value={novaCategoria} 
+                  onChange={(e) => setNovaCategoria(e.target.value)} 
+                  style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
+                  className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#D3C1D2] placeholder:text-[#939196]" 
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Valor Alvo / Limite (R$)</label>
-                <input type="number" placeholder="0.00" required min="0" step="any" value={novoLimite} onChange={(e) => setNovoLimite(e.target.value)} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-zinc-100" />
+                <label style={{ color: '#D3C1D2' }} className="text-[9px] font-bold uppercase block">
+                  Valor Alvo / Limite (R$)
+                </label>
+                <input 
+                  type="number" 
+                  placeholder="0.00" 
+                  required 
+                  min="0" 
+                  step="any" 
+                  value={novoLimite} 
+                  onChange={(e) => setNovoLimite(e.target.value)} 
+                  style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
+                  className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#D3C1D2] placeholder:text-[#939196]" 
+                />
               </div>
             </div>
-            <div className="flex justify-end gap-1.5">
-              <button type="button" onClick={() => setIsCriando(false)} className="px-2.5 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 rounded-lg text-[10px] font-bold hover:bg-gray-200">Cancelar</button>
-              <button type="submit" className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-700">Adicionar</button>
+            
+            <div className="flex justify-end gap-1.5 pt-1">
+              <button 
+                type="button" 
+                onClick={() => setIsCriando(false)} 
+                style={{ backgroundColor: '#273C2C', color: '#D3C1D2' }}
+                className="px-3 py-1.5 rounded-xl text-[10px] font-bold hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
+                className="px-4 py-1.5 rounded-xl text-[10px] font-bold hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md"
+              >
+                Adicionar
+              </button>
             </div>
           </form>
         )}
@@ -276,66 +368,127 @@ export default function BudgetPanel({ transacoes = [], limites={}, setLimites })
           
           const porcentagem = limiteDefinido > 0 ? Math.min(Math.round((valorProgresso / limiteDefinido) * 100), 100) : 0;
 
-          let corBarra = ehMeta ? 'bg-emerald-500' : 'bg-blue-500';
-          let corTexto = ehMeta ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400';
-          let corFundoCard = 'bg-slate-50/50 dark:bg-zinc-800/30';
+          let corBarra = ehMeta ? 'bg-emerald-400' : 'bg-[#D3C1D2]';
+          let corTexto = ehMeta ? 'text-emerald-400' : 'text-[#D3C1D2]';
+          let corCardBg = 'rgba(39, 60, 44, 0.35)';
+          let corCardBorda = '#273C2C';
 
           if (!ehMeta && porcentagem >= 100) {
-            corBarra = 'bg-red-500'; 
-            corTexto = 'text-red-600 dark:text-red-400'; 
-            corFundoCard = 'bg-red-50/30 dark:bg-red-950/10 border-red-100 dark:border-red-900/20';
+            corBarra = 'bg-rose-500'; 
+            corTexto = 'text-rose-400'; 
+            corCardBg = 'rgba(98, 48, 48, 0.25)';
+            corCardBorda = 'rgba(244, 63, 94, 0.4)';
           }
 
           return (
-            <div key={categoria} className={`p-3 rounded-2xl border border-gray-100 dark:border-zinc-800/60 flex flex-col justify-between space-y-2 group transition-all ${corFundoCard}`}>
+            <div 
+              key={categoria} 
+              style={{ backgroundColor: corCardBg, borderColor: corCardBorda }}
+              className="budget-card p-4 rounded-2xl border flex flex-col justify-between space-y-2.5 group transition-all hover:border-[#626868]"
+            >
               <div className="flex justify-between items-start text-xs">
                 <div className="flex flex-col space-y-0.5 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-gray-800 dark:text-zinc-200">{categoria}</span>
-                    <span className={`text-[8px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider ${ehMeta ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700' : 'bg-blue-100 dark:bg-blue-950 text-blue-700'}`}>
+                    <span style={{ color: '#FFE2FE' }} className="font-bold">{categoria}</span>
+                    <span 
+                      style={{
+                        backgroundColor: ehMeta ? 'rgba(16, 185, 129, 0.15)' : 'rgba(211, 193, 210, 0.15)',
+                        color: ehMeta ? '#34d399' : '#D3C1D2',
+                        borderColor: ehMeta ? 'rgba(16, 185, 129, 0.3)' : 'rgba(211, 193, 210, 0.3)'
+                      }}
+                      className="text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider border"
+                    >
                       {ehMeta ? 'Meta' : 'Orçamento'}
                     </span>
                   </div>
                   
                   {isEditing ? (
                     <div className="flex items-center gap-1 mt-1.5 w-full">
-                      <span className="text-[10px] text-gray-400">R$</span>
-                      <input type="number" className="w-18 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-md px-1.5 py-0.5 text-[11px] font-bold text-gray-900 dark:text-zinc-100 focus:outline-none" value={valorTemporario} onChange={(e) => setValorTemporario(e.target.value)} autoFocus />
-                      <button onClick={() => salvarLimite(categoria)} className="p-1 bg-emerald-500 text-white rounded-md hover:bg-emerald-600"><Check className="w-3 h-3" /></button>
-                      <button onClick={() => removerMeta(categoria)} className="p-1 bg-red-500 text-white rounded-md hover:bg-red-600" title="Remover permanentemente"><Trash2 className="w-3 h-3" /></button>
-                      <button onClick={() => setCategoriaEmEdicao(null)} className="p-1 bg-gray-300 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 rounded-md hover:bg-gray-400"><X className="w-3 h-3" /></button>
+                      <span style={{ color: '#939196' }} className="text-[10px]">R$</span>
+                      <input 
+                        type="number" 
+                        value={valorTemporario} 
+                        onChange={(e) => setValorTemporario(e.target.value)} 
+                        autoFocus 
+                        style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
+                        className="w-20 border rounded-lg px-2 py-0.5 text-[11px] font-bold focus:outline-none" 
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => salvarLimite(categoria)} 
+                        className="p-1 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors cursor-pointer"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => removerMeta(categoria)} 
+                        className="p-1 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors cursor-pointer" 
+                        title="Remover permanentemente"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setCategoriaEmEdicao(null)} 
+                        style={{ backgroundColor: '#273C2C', color: '#D3C1D2' }}
+                        className="p-1 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-gray-400 dark:text-zinc-500">Alvo: R$ {limiteDefinido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      <button onClick={() => { setCategoriaEmEdicao(categoria); setValorTemporario(limiteDefinido.toString()); }} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500 transition-all p-0.5 rounded-sm"><Pencil className="w-3 h-3" /></button>
+                      <span style={{ color: '#939196' }} className="text-[10px]">
+                        Alvo: R$ {limiteDefinido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      <button 
+                        type="button"
+                        onClick={() => { setCategoriaEmEdicao(categoria); setValorTemporario(limiteDefinido.toString()); }} 
+                        className="opacity-0 group-hover:opacity-100 text-[#939196] hover:text-[#D3C1D2] transition-all p-0.5 rounded-sm cursor-pointer"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
                     </div>
                   )}
                 </div>
+
                 <div className="text-right">
                   <span className={`font-bold block ${corTexto}`}>{porcentagem}%</span>
-                  <span className="text-[10px] font-medium text-gray-500 dark:text-zinc-400">
+                  <span style={{ color: '#939196' }} className="text-[10px] font-medium block">
                     {ehMeta ? 'Acumulado: ' : 'Gasto no Mês: '} R$ {valorProgresso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
 
-              <div className="w-full bg-gray-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
-                <div className={`h-full transition-all duration-500 ease-out ${corBarra}`} style={{ width: `${porcentagem}%` }} />
+              {/* Barra de Progresso Animada */}
+              <div style={{ backgroundColor: '#273C2C' }} className="w-full h-2 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-700 ease-out ${corBarra}`} 
+                  style={{ width: `${porcentagem}%` }} 
+                />
               </div>
 
-              <div className="flex items-center gap-1 text-[10px] font-semibold opacity-90">
+              <div className="flex items-center gap-1 text-[10px] font-semibold">
                 {ehMeta ? (
                   porcentagem >= 100 ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Objetivo alcançado! Excelente!</span>
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Objetivo alcançado! Excelente!
+                    </span>
                   ) : (
-                    <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1"><Wallet className="w-3 h-3" /> Guardando parcelas na Meta...</span>
+                    <span style={{ color: '#D3C1D2' }} className="flex items-center gap-1">
+                      <Wallet className="w-3 h-3" /> Guardando parcelas na Meta...
+                    </span>
                   )
                 ) : (
                   porcentagem >= 100 ? (
-                    <span className="text-red-600 dark:text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Limite máximo do mês atingido!</span>
+                    <span className="text-rose-400 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> Limite máximo do mês atingido!
+                    </span>
                   ) : (
-                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Orçamento mensal controlado.</span>
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Orçamento mensal controlado.
+                    </span>
                   )
                 )}
               </div>
