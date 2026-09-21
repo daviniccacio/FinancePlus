@@ -51,7 +51,7 @@ export function useAuth() {
       notify.error(traduzirErroSupabase(error));
       return false;
     }
-    notify.success("Bem-vindo de volta!");
+    // Sucesso na autenticação: a mensagem será disparada apenas ao chegar ao Dashboard
     return true;
   };
 
@@ -153,6 +153,7 @@ export function useAuth() {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    sessionStorage.removeItem('boas_vindas_exibido');
     notify.success("Sessão encerrada.");
   };
 

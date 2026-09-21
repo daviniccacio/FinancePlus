@@ -1,6 +1,5 @@
 // src/components/common/LoginScreen.jsx
 import { useState, useRef, useEffect } from 'react';
-import { Toaster } from 'react-hot-toast';
 import { Wallet, Eye, EyeOff, ShieldCheck, Loader2, Sun, Moon } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -8,15 +7,6 @@ import AuthRecovery from './AuthRecovery';
 
 // Registro obrigatório do plugin GSAP
 gsap.registerPlugin(useGSAP);
-
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
 
 export default function LoginScreen({
   viewAuth,
@@ -33,7 +23,7 @@ export default function LoginScreen({
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
-  // 🌟 Estado do Modo Claro / Modo Escuro (Padrão: Dark Mode)
+  // Estado do Modo Claro / Modo Escuro (Padrão: Dark Mode)
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Referências para elementos do DOM e controle de animação
@@ -44,7 +34,6 @@ export default function LoginScreen({
   const campoConfirmarRef = useRef(null);
   const progressFillRef = useRef(null);
   const themeToggleBtnRef = useRef(null);
-  // Adicione junto com as outras refs (por volta da linha 40):
   const eyeBtnRef = useRef(null);
 
   // Referências para o Canvas e Interação com o Mouse
@@ -98,13 +87,11 @@ export default function LoginScreen({
         if (p1.x < 0 || p1.x > width) p1.vx *= -1;
         if (p1.y < 0 || p1.y > height) p1.vy *= -1;
 
-        // Desenho do nó com as cores da nova paleta
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.raio, 0, Math.PI * 2);
         ctx.fillStyle = dark ? 'rgba(255, 226, 254, 0.85)' : 'rgba(39, 60, 44, 0.85)';
         ctx.fill();
 
-        // Linhas de conexão entre nós próximos
         for (let j = i + 1; j < particulas.length; j++) {
           const p2 = particulas[j];
           const dx = p1.x - p2.x;
@@ -124,7 +111,6 @@ export default function LoginScreen({
           }
         }
 
-        // Linhas de conexão com o cursor do mouse
         if (mouseRef.current.x !== null && mouseRef.current.y !== null) {
           const dxMouse = p1.x - mouseRef.current.x;
           const dyMouse = p1.y - mouseRef.current.y;
@@ -153,7 +139,7 @@ export default function LoginScreen({
     };
   }, { scope: containerRef });
 
-  // 2. ENTRADA ANIMADA E ANIMAÇÃO DE FLUTUAÇÃO DO CARTÃO
+  // 2. ENTRADA ANIMADA DO CARTÃO
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.7 } });
 
@@ -170,8 +156,6 @@ export default function LoginScreen({
       },
       '-=0.4'
     );
-
-    // Efeito suave de flutuação contínua (Floating Effect)
   }, { scope: containerRef });
 
   // 3. TRANSIÇÃO FLUIDA DOS CAMPOS (LOGIN <-> CADASTRO)
@@ -195,7 +179,6 @@ export default function LoginScreen({
     });
   }, { dependencies: [viewAuth], scope: containerRef });
 
-  // 4. ANIMAÇÃO DO BOTÃO DE MODO CLARO / ESCURO
   const alternarTema = () => {
     setIsDarkMode((prev) => !prev);
 
@@ -237,10 +220,8 @@ export default function LoginScreen({
       setCarregando(false);
       gsap.set(progressFillRef.current, { width: '0%' });
     }, 1500);
-
-
   };
-  // 🌟 Função para alternar a visibilidade da senha com animação GSAP
+
   const alternarMostrarSenha = () => {
     setMostrarSenha((prev) => !prev);
 
@@ -255,14 +236,11 @@ export default function LoginScreen({
 
   if (viewAuth === 'solicitar') {
     return (
-      <>
-        <Toaster position="bottom-right" />
-        <AuthRecovery
-          modo="solicitar"
-          aoVoltar={() => setViewAuth('login')}
-          aoSubmeter={lidarComSolicitacaoEmail}
-        />
-      </>
+      <AuthRecovery
+        modo="solicitar"
+        aoVoltar={() => setViewAuth('login')}
+        aoSubmeter={lidarComSolicitacaoEmail}
+      />
     );
   }
 
@@ -277,15 +255,13 @@ export default function LoginScreen({
       }}
       className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-8 font-sans transition-colors duration-500 overflow-hidden"
     >
-      <Toaster position="bottom-right" />
-
       {/* CANVAS DA CONSTELAÇÃO DE NÓS */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none z-0"
       />
 
-      {/* Cartão de Login com Glassmorphism baseado na nova paleta */}
+      {/* Cartão de Login */}
       <div
         ref={cardRef}
         style={{
@@ -294,8 +270,7 @@ export default function LoginScreen({
         }}
         className="relative z-10 backdrop-blur-2xl w-full max-w-4xl rounded-3xl shadow-2xl border overflow-hidden grid grid-cols-1 md:grid-cols-2 transition-colors duration-500 my-auto"
       >
-
-        {/* BOTÃO DE ALTERNÂNCIA DE TEMA (MODO CLARO / MODOS ESCURO) */}
+        {/* BOTÃO DE ALTERNÂNCIA DE TEMA */}
         <button
           ref={themeToggleBtnRef}
           type="button"
@@ -430,7 +405,6 @@ export default function LoginScreen({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                  {/* Substituto do botão do olhinho no campo de senha */}
                   <button
                     ref={eyeBtnRef}
                     type="button"
@@ -486,7 +460,7 @@ export default function LoginScreen({
                 </div>
               )}
 
-              {/* Botão com Barra de Preenchimento Progressivo */}
+              {/* Botão de Envio */}
               <button
                 type="submit"
                 disabled={carregando}

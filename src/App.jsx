@@ -10,6 +10,7 @@ import { useGSAP } from '@gsap/react';
 
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
+import { notify } from './utils/notify';
 import LoginScreen from './components/common/LoginScreen';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
@@ -68,19 +69,25 @@ export default function App() {
     }
   }, { dependencies: [location.pathname] });
 
+  // 🌟 GERENCIADOR DE LOGIN E TRANSIÇÃO
   const lidarComLoginETransicao = async (email, password) => {
     const sucesso = await login(email, password);
-    if (sucesso && pageRef.current) {
-      gsap.to(pageRef.current, {
-        opacity: 0,
-        y: -20,
-        scale: 0.97,
-        duration: 0.35,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          navigate('/dashboard');
-        },
-      });
+    if (sucesso) {
+      if (pageRef.current) {
+        gsap.to(pageRef.current, {
+          opacity: 0,
+          y: -20,
+          scale: 0.97,
+          duration: 0.35,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            navigate('/dashboard');
+            // Dispara a mensagem de boas-vindas exatamente ao chegar ao Dashboard
+          },
+        });
+      } else {
+        navigate('/dashboard');
+      }
     }
   };
 

@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { AreaChart, DonutChart, BarChart, Flex } from '@tremor/react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { notify } from '../utils/notify';
 
 import SummaryCards from './SummaryCards';
 import AlertsPanel from './AlertsPanel';
@@ -84,6 +85,18 @@ export default function DashboardView({
   const formatarMoeda = (valor) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 
+  const notificacaoExecutadaRef = useRef(false);
+
+  useEffect(() => {
+    const jaExibiuNaSessao = sessionStorage.getItem('boas_vindas_exibido');
+
+    if (!notificacaoExecutadaRef.current && !jaExibiuNaSessao) {
+      notificacaoExecutadaRef.current = true;
+      sessionStorage.setItem('boas_vindas_exibido', 'true');
+      notify.success("Bem-vindo de volta!");
+    }
+  }, []);
+
   // Entrada sequencial fluida no carregamento
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.6 } });
@@ -149,6 +162,8 @@ export default function DashboardView({
   const tituloExibidoDespesa = itemFocadoDespesa ? itemFocadoDespesa.name : 'Despesas Totais';
 
   const PALETA_CORES = ["emerald", "violet", "rose", "amber", "cyan", "indigo", "pink"];
+
+ // Executa apenas uma vez ao montar o componente
 
   return (
     <div ref={containerRef} className="space-y-6 font-sans">
