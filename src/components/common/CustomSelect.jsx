@@ -6,15 +6,6 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
-
 export default function CustomSelect({ 
   value, 
   onChange, 
@@ -108,20 +99,19 @@ export default function CustomSelect({
       <button
         type="button"
         onClick={toggleOpen}
-        style={{
-          backgroundColor: 'rgba(39, 60, 44, 0.25)',
-          borderColor: isOpen ? '#D3C1D2' : '#626868',
-          color: '#FFE2FE'
-        }}
-        className="w-full flex items-center justify-between px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none transition-all cursor-pointer shadow-xs hover:border-[#D3C1D2]"
+        className={`w-full flex items-center justify-between px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none transition-all cursor-pointer shadow-xs bg-gray-50 dark:bg-[#273C2C]/25 text-gray-900 dark:text-[#FFE2FE] ${
+          isOpen 
+            ? 'border-[#273C2C] dark:border-[#D3C1D2]' 
+            : 'border-gray-300 dark:border-[#626868]'
+        } hover:border-[#273C2C] dark:hover:border-[#D3C1D2]`}
       >
         <div className="flex items-center gap-2 truncate">
-          {IconComponent && <IconComponent className="w-3.5 h-3.5 text-[#D3C1D2] shrink-0" />}
-          <span style={{ color: !value ? '#939196' : '#FFE2FE' }} className="truncate">
+          {IconComponent && <IconComponent className="w-3.5 h-3.5 shrink-0 text-[#273C2C] dark:text-[#D3C1D2]" />}
+          <span className={`truncate ${!value ? 'text-gray-400 dark:text-[#939196]' : 'text-gray-900 dark:text-[#FFE2FE]'}`}>
             {labelExibida}
           </span>
         </div>
-        <div ref={chevronRef} style={{ color: '#D3C1D2' }} className="shrink-0">
+        <div ref={chevronRef} className="shrink-0 text-gray-500 dark:text-[#D3C1D2]">
           <ChevronDown className="w-4 h-4" />
         </div>
       </button>
@@ -130,15 +120,11 @@ export default function CustomSelect({
       {isOpen && (
         <div
           ref={listRef}
-          style={{
-            backgroundColor: '#161e18',
-            borderColor: '#273C2C'
-          }}
-          className="absolute left-0 right-0 top-full mt-1.5 border rounded-2xl shadow-2xl overflow-hidden z-50 origin-top"
+          className="absolute left-0 right-0 top-full mt-1.5 border rounded-2xl shadow-2xl overflow-hidden z-50 origin-top bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C]"
         >
           <div className="max-h-56 overflow-y-auto p-1.5 space-y-0.5 custom-scrollbar">
             {options.length === 0 ? (
-              <div style={{ color: '#939196' }} className="px-3 py-2 text-xs text-center">
+              <div className="px-3 py-2 text-xs text-center text-gray-400 dark:text-[#939196]">
                 Nenhuma opção disponível
               </div>
             ) : (
@@ -152,14 +138,14 @@ export default function CustomSelect({
                     key={val}
                     type="button"
                     onClick={() => selecionarOpcao(val)}
-                    style={{
-                      backgroundColor: estaSelecionado ? 'rgba(211, 193, 210, 0.15)' : 'transparent',
-                      color: estaSelecionado ? '#FFE2FE' : '#D3C1D2'
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-between hover:bg-[#273C2C]/50"
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-between ${
+                      estaSelecionado
+                        ? 'bg-gray-100 dark:bg-[#D3C1D2]/15 text-[#273C2C] dark:text-[#FFE2FE] font-bold'
+                        : 'text-gray-700 dark:text-[#D3C1D2] hover:bg-gray-100 dark:hover:bg-[#273C2C]/50'
+                    }`}
                   >
                     <span>{label}</span>
-                    {estaSelecionado && <span className="w-1.5 h-1.5 rounded-full bg-[#D3C1D2]"></span>}
+                    {estaSelecionado && <span className="w-1.5 h-1.5 rounded-full bg-[#273C2C] dark:bg-[#D3C1D2]"></span>}
                   </button>
                 );
               })

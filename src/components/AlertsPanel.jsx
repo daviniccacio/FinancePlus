@@ -6,15 +6,6 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
-
 export default function AlertsPanel({ transacoes = [], limites = {} }) {
   const containerRef = useRef(null);
   const hoje = new Date();
@@ -111,7 +102,6 @@ export default function AlertsPanel({ transacoes = [], limites = {} }) {
 
   const todosAlertas = [...alertasOrcamento, ...alertasVencimento].sort((a, b) => a.diferencaDias - b.diferencaDias);
 
-  // 🌟 GSAP: Animação de entrada nas notificações de alerta
   useGSAP(() => {
     if (todosAlertas.length > 0) {
       gsap.fromTo(
@@ -124,15 +114,9 @@ export default function AlertsPanel({ transacoes = [], limites = {} }) {
 
   if (todosAlertas.length === 0) {
     return (
-      <div 
-        style={{
-          backgroundColor: '#161e18',
-          borderColor: '#273C2C',
-        }}
-        className="p-4 rounded-2xl border flex items-center gap-3 transition-colors duration-200 shadow-md"
-      >
-        <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-        <p style={{ color: '#FFE2FE' }} className="text-xs font-semibold">
+      <div className="p-4 rounded-2xl bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] flex items-center gap-3 transition-colors duration-200 shadow-xs">
+        <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <p className="text-xs font-semibold text-gray-800 dark:text-[#FFE2FE]">
           Tudo sob controle! Nenhuma conta atrasada ou orçamento estourando neste mês.
         </p>
       </div>
@@ -142,58 +126,49 @@ export default function AlertsPanel({ transacoes = [], limites = {} }) {
   return (
     <div 
       ref={containerRef}
-      style={{
-        backgroundColor: '#161e18',
-        borderColor: '#273C2C',
-      }}
-      className="p-5 rounded-3xl border shadow-lg space-y-3 font-sans transition-colors duration-200"
+      className="p-5 rounded-3xl bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] shadow-xs space-y-3 font-sans transition-colors duration-200"
     >
       <div className="flex items-center gap-2">
-        <AlertTriangle className="w-5 h-5 text-amber-400" />
-        <h3 style={{ color: '#D3C1D2' }} className="text-xs font-bold uppercase tracking-wider">
+        <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-[#D3C1D2]">
           Central de Notificações e Avisos
         </h3>
       </div>
       
       <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
-        {todosAlertas.map((alerta) => (
-          <div 
-            key={alerta.id} 
-            style={{
-              backgroundColor: alerta.statusVencimento === 'vencida' ? 'rgba(98, 48, 48, 0.25)' : 'rgba(98, 80, 40, 0.25)',
-              borderColor: alerta.statusVencimento === 'vencida' ? 'rgba(244, 63, 94, 0.35)' : 'rgba(251, 191, 36, 0.35)',
-            }}
-            className="alert-row flex items-center justify-between p-3 rounded-2xl border text-xs font-medium transition-all hover:scale-[1.01]"
-          >
-            <div className="flex flex-col gap-0.5">
-              <span style={{ color: '#FFE2FE' }} className="font-bold flex items-center gap-1.5">
-                {alerta.tipoAlerta === 'orcamento' && <AlertCircle className="w-3.5 h-3.5 text-rose-400" />}
-                {alerta.descricao}
-              </span>
-              <span 
-                style={{ color: alerta.statusVencimento === 'vencida' ? '#f87171' : '#fbbf24' }} 
-                className="text-[10px] flex items-center gap-1 font-semibold"
-              >
-                <CalendarClock className="w-3.5 h-3.5" /> {alerta.mensagem}
-              </span>
+        {todosAlertas.map((alerta) => {
+          const ehVencida = alerta.statusVencimento === 'vencida';
+          return (
+            <div 
+              key={alerta.id} 
+              className={`alert-row flex items-center justify-between p-3 rounded-2xl border text-xs font-medium transition-all hover:scale-[1.01] ${
+                ehVencida
+                  ? 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-500/35'
+                  : 'bg-amber-50 dark:bg-amber-950/25 border-amber-200 dark:border-amber-500/35'
+              }`}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold flex items-center gap-1.5 text-gray-900 dark:text-[#FFE2FE]">
+                  {alerta.tipoAlerta === 'orcamento' && <AlertCircle className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />}
+                  {alerta.descricao}
+                </span>
+                <span className={`text-[10px] flex items-center gap-1 font-semibold ${
+                  ehVencida ? 'text-rose-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                  <CalendarClock className="w-3.5 h-3.5" /> {alerta.mensagem}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="font-bold block text-gray-900 dark:text-[#FFE2FE]">
+                  R$ {alerta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-[9px] px-2 py-0.5 rounded-md font-semibold border inline-block mt-0.5 bg-white dark:bg-[#161e18] text-gray-700 dark:text-[#D3C1D2] border-gray-200 dark:border-[#273C2C]">
+                  {alerta.categoria}
+                </span>
+              </div>
             </div>
-            <div className="text-right">
-              <span style={{ color: '#FFE2FE' }} className="font-bold block">
-                R$ {alerta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
-              <span 
-                style={{
-                  backgroundColor: '#161e18',
-                  color: '#D3C1D2',
-                  borderColor: '#273C2C'
-                }}
-                className="text-[9px] px-2 py-0.5 rounded-md font-semibold border inline-block mt-0.5"
-              >
-                {alerta.categoria}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

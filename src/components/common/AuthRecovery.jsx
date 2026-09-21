@@ -6,15 +6,6 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
-
 export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter }) {
   const [email, setEmail] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -63,37 +54,22 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
   return (
     <div 
       ref={containerRef}
-      style={{
-        backgroundColor: '#1a281e',
-        color: '#FFE2FE'
-      }}
-      className="min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-500"
+      className="min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-500 bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]"
     >
       <div 
         ref={cardRef}
-        style={{
-          backgroundColor: '#161e18',
-          borderColor: '#273C2C'
-        }}
-        className="w-full max-w-md p-8 rounded-3xl border shadow-2xl space-y-6"
+        className="w-full max-w-md p-8 rounded-3xl border shadow-2xl space-y-6 bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C]"
       >
         
         {/* Cabeçalho dinâmico */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div 
-            style={{
-              backgroundColor: 'rgba(211, 193, 210, 0.15)',
-              borderColor: '#D3C1D2',
-              color: '#D3C1D2'
-            }}
-            className="p-3.5 rounded-2xl border"
-          >
+          <div className="p-3.5 rounded-2xl border bg-purple-50 dark:bg-[#D3C1D2]/15 border-purple-200 dark:border-[#D3C1D2] text-[#273C2C] dark:text-[#D3C1D2]">
             {modo === 'solicitar' ? <KeyRound className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
           </div>
-          <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">
             {modo === 'solicitar' ? 'Recuperar sua senha' : 'Criar nova senha'}
           </h2>
-          <p style={{ color: '#D3C1D2' }} className="text-xs font-medium max-w-xs leading-relaxed">
+          <p className="text-xs font-medium max-w-xs leading-relaxed text-gray-600 dark:text-[#D3C1D2]">
             {modo === 'solicitar' 
               ? 'Informe o seu e-mail cadastrado para receber as instruções de recuperação.' 
               : 'Escolha uma senha forte de no mínimo 6 caracteres para proteger sua conta.'}
@@ -106,11 +82,11 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
           {/* MODO 1: INPUT DE E-MAIL */}
           {modo === 'solicitar' && (
             <div className="space-y-1">
-              <label style={{ color: '#D3C1D2' }} className="text-[10px] font-bold uppercase tracking-wider block">
+              <label className="text-[10px] font-bold uppercase tracking-wider block text-gray-700 dark:text-[#D3C1D2]">
                 E-mail de Cadastro
               </label>
               <div className="relative flex items-center">
-                <Mail style={{ color: '#939196' }} className="absolute left-3.5 w-4 h-4" />
+                <Mail className="absolute left-3.5 w-4 h-4 text-gray-400 dark:text-[#939196]" />
                 <input
                   type="email"
                   required
@@ -118,12 +94,7 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
                   disabled={carregando}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    backgroundColor: 'rgba(98, 104, 104, 0.25)',
-                    borderColor: '#626868',
-                    color: '#FFE2FE'
-                  }}
-                  className="w-full border rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D3C1D2]/40 disabled:opacity-60 transition-all placeholder:text-[#939196]"
+                  className="w-full border rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#273C2C]/30 dark:focus:ring-[#D3C1D2]/40 disabled:opacity-60 transition-all bg-gray-50 dark:bg-[#626868]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
                 />
               </div>
             </div>
@@ -133,11 +104,11 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
           {modo === 'definir' && (
             <>
               <div className="space-y-1">
-                <label style={{ color: '#D3C1D2' }} className="text-[10px] font-bold uppercase tracking-wider block">
+                <label className="text-[10px] font-bold uppercase tracking-wider block text-gray-700 dark:text-[#D3C1D2]">
                   Nova Senha
                 </label>
                 <div className="relative flex items-center">
-                  <Lock style={{ color: '#939196' }} className="absolute left-3.5 w-4 h-4" />
+                  <Lock className="absolute left-3.5 w-4 h-4 text-gray-400 dark:text-[#939196]" />
                   <input
                     type={mostrarSenha ? "text" : "password"}
                     required
@@ -146,19 +117,13 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
                     disabled={carregando}
                     value={novaSenha}
                     onChange={(e) => setNovaSenha(e.target.value)}
-                    style={{
-                      backgroundColor: 'rgba(98, 104, 104, 0.25)',
-                      borderColor: '#626868',
-                      color: '#FFE2FE'
-                    }}
-                    className="w-full border rounded-xl pl-10 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D3C1D2]/40 disabled:opacity-60 transition-all placeholder:text-[#939196]"
+                    className="w-full border rounded-xl pl-10 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#273C2C]/30 dark:focus:ring-[#D3C1D2]/40 disabled:opacity-60 transition-all bg-gray-50 dark:bg-[#626868]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
                   />
                   <button
                     ref={eyeBtnRef}
                     type="button"
                     onClick={alternarMostrarSenha}
-                    style={{ color: '#D3C1D2' }}
-                    className="absolute right-3.5 p-1 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="absolute right-3.5 p-1 hover:opacity-80 transition-opacity cursor-pointer text-gray-500 dark:text-[#D3C1D2]"
                   >
                     {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -166,11 +131,11 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
               </div>
 
               <div className="space-y-1">
-                <label style={{ color: '#D3C1D2' }} className="text-[10px] font-bold uppercase tracking-wider block">
+                <label className="text-[10px] font-bold uppercase tracking-wider block text-gray-700 dark:text-[#D3C1D2]">
                   Confirmar Nova Senha
                 </label>
                 <div className="relative flex items-center">
-                  <Lock style={{ color: '#939196' }} className="absolute left-3.5 w-4 h-4" />
+                  <Lock className="absolute left-3.5 w-4 h-4 text-gray-400 dark:text-[#939196]" />
                   <input
                     type={mostrarSenha ? "text" : "password"}
                     required
@@ -178,12 +143,7 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
                     disabled={carregando}
                     value={confirmarSenha}
                     onChange={(e) => setConfirmarSenha(e.target.value)}
-                    style={{
-                      backgroundColor: 'rgba(98, 104, 104, 0.25)',
-                      borderColor: '#626868',
-                      color: '#FFE2FE'
-                    }}
-                    className="w-full border rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D3C1D2]/40 disabled:opacity-60 transition-all placeholder:text-[#939196]"
+                    className="w-full border rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#273C2C]/30 dark:focus:ring-[#D3C1D2]/40 disabled:opacity-60 transition-all bg-gray-50 dark:bg-[#626868]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
                   />
                 </div>
               </div>
@@ -194,11 +154,7 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
           <button
             type="submit"
             disabled={carregando}
-            style={{
-              backgroundColor: '#D3C1D2',
-              color: '#273C2C'
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
           >
             {carregando ? (
               <>
@@ -212,13 +168,12 @@ export default function AuthRecovery({ modo = 'solicitar', aoVoltar, aoSubmeter 
         </form>
 
         {/* Rodapé: Link para retornar ao Login */}
-        <div style={{ borderColor: '#273C2C' }} className="border-t pt-4 flex justify-center">
+        <div className="border-t pt-4 flex justify-center border-gray-200 dark:border-[#273C2C]">
           <button
             type="button"
             onClick={aoVoltar}
             disabled={carregando}
-            style={{ color: '#D3C1D2' }}
-            className="flex items-center gap-1.5 text-xs font-bold hover:underline transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-bold hover:underline transition-all cursor-pointer disabled:opacity-50 text-gray-700 dark:text-[#D3C1D2]"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Voltar para o login

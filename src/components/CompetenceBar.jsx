@@ -5,17 +5,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import CustomSelect from './common/CustomSelect';
 
-// Registro do plugin GSAP para React
 gsap.registerPlugin(useGSAP);
-
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
 
 const CATEGORIAS_PADRAO = [
   'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 
@@ -42,7 +32,6 @@ export default function CompetenceBar({
     { id: 'tudo', label: 'Tudo' },
   ];
 
-  // 🌟 GSAP: Animação da Pílula Deslizante ao alternar o período
   useGSAP(() => {
     const indiceAtivo = periodos.findIndex((p) => p.id === filtroPeriodo);
     const botaoAtivo = buttonsRef.current[indiceAtivo];
@@ -57,7 +46,6 @@ export default function CompetenceBar({
     }
   }, { dependencies: [filtroPeriodo], scope: containerRef });
 
-  // Resposta tátil ao clicar nos botões
   const animarClique = (e) => {
     gsap.fromTo(
       e.currentTarget,
@@ -95,7 +83,6 @@ export default function CompetenceBar({
     return `${meses[Number(mes) - 1]} de ${ano}`;
   }
 
-  // Opções para o seletor personalizado de categorias
   const opcoesCategoria = [
     { value: '', label: 'Todas as Categorias' },
     ...CATEGORIAS_PADRAO.map((cat) => ({ value: cat, label: cat }))
@@ -104,29 +91,16 @@ export default function CompetenceBar({
   return (
     <section 
       ref={containerRef} 
-      style={{
-        backgroundColor: '#161e18',
-        borderColor: '#273C2C',
-      }}
-      className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between p-4 rounded-3xl border shadow-lg gap-4 font-sans transition-colors duration-200 relative z-30"
+      className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between p-4 rounded-3xl bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] shadow-xs gap-4 font-sans transition-colors duration-200 relative z-30"
     >
-      
-      {/* SEÇÃO DA ESQUERDA: Filtros de Tempo */}
+      {/* SEÇÃO DA ESQUERDA */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
         
-        {/* Seletor de Tipo de Período com Pílula Deslizante */}
-        <div 
-          style={{
-            backgroundColor: 'rgba(39, 60, 44, 0.35)',
-            borderColor: '#273C2C'
-          }}
-          className="relative flex items-center p-1 rounded-2xl border w-full sm:w-auto overflow-x-auto"
-        >
-          {/* Pílula de fundo que desliza suavemente */}
+        {/* Seletor de Período com Pílula Deslizante */}
+        <div className="relative flex items-center p-1 rounded-2xl border bg-gray-100 dark:bg-[#273C2C]/35 border-gray-200 dark:border-[#273C2C] w-full sm:w-auto overflow-x-auto">
           <div
             ref={pillRef}
-            style={{ backgroundColor: '#D3C1D2' }}
-            className="absolute top-1 bottom-1 left-0 rounded-xl shadow-md pointer-events-none z-0"
+            className="absolute top-1 bottom-1 left-0 rounded-xl shadow-xs pointer-events-none z-0 bg-[#273C2C] dark:bg-[#D3C1D2]"
           />
 
           {periodos.map((p, index) => {
@@ -140,11 +114,10 @@ export default function CompetenceBar({
                   setFiltroPeriodo(p.id);
                   setPaginaAtual(1);
                 }}
-                style={{
-                  color: estaAtivo ? '#273C2C' : '#939196'
-                }}
-                className={`relative z-10 text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap hover:text-[#FFE2FE] ${
-                  estaAtivo ? 'font-extrabold' : ''
+                className={`relative z-10 text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap ${
+                  estaAtivo 
+                    ? 'text-white dark:text-[#273C2C] font-extrabold' 
+                    : 'text-gray-600 dark:text-[#939196] hover:text-gray-900 dark:hover:text-[#FFE2FE]'
                 }`}
               >
                 {p.label}
@@ -153,29 +126,21 @@ export default function CompetenceBar({
           })}
         </div>
 
-        {/* Visualizador do Escopo Cronológico + Navegação por Setas */}
+        {/* Mês/Ano e Botões de Navegação */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
           {filtroPeriodo === 'mensal' && (
             <button 
               type="button"
               onClick={(e) => { animarClique(e); alterarCompetencia(-1); }} 
-              style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#FFE2FE' }}
-              className="p-2 rounded-xl border hover:border-[#D3C1D2] transition-all active:scale-95 cursor-pointer shadow-xs"
+              className="p-2 rounded-xl border bg-gray-100 dark:bg-[#273C2C] border-gray-200 dark:border-[#626868] text-gray-700 dark:text-[#FFE2FE] hover:bg-gray-200 dark:hover:border-[#D3C1D2] transition-all active:scale-95 cursor-pointer shadow-xs"
               title="Mês Anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
 
-          <div 
-            style={{
-              backgroundColor: 'rgba(39, 60, 44, 0.35)',
-              borderColor: '#273C2C',
-              color: '#FFE2FE'
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold min-w-44 justify-center shadow-inner"
-          >
-            <Calendar className="w-3.5 h-3.5 text-[#D3C1D2]" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl border bg-gray-100 dark:bg-[#273C2C]/35 border-gray-200 dark:border-[#273C2C] text-gray-800 dark:text-[#FFE2FE] text-xs font-bold min-w-44 justify-center shadow-inner">
+            <Calendar className="w-3.5 h-3.5 text-[#273C2C] dark:text-[#D3C1D2]" />
             <span>{formatarCompetenciaTexto(filtroCompetencia)}</span>
           </div>
 
@@ -183,8 +148,7 @@ export default function CompetenceBar({
             <button 
               type="button"
               onClick={(e) => { animarClique(e); alterarCompetencia(1); }} 
-              style={{ backgroundColor: '#273C2C', borderColor: '#626868', color: '#FFE2FE' }}
-              className="p-2 rounded-xl border hover:border-[#D3C1D2] transition-all active:scale-95 cursor-pointer shadow-xs"
+              className="p-2 rounded-xl border bg-gray-100 dark:bg-[#273C2C] border-gray-200 dark:border-[#626868] text-gray-700 dark:text-[#FFE2FE] hover:bg-gray-200 dark:hover:border-[#D3C1D2] transition-all active:scale-95 cursor-pointer shadow-xs"
               title="Próximo Mês"
             >
               <ChevronRight className="w-4 h-4" />
@@ -193,8 +157,8 @@ export default function CompetenceBar({
         </div>
       </div>
 
-      {/* SEÇÃO DA DIREITA: Filtro por Categoria via CustomSelect */}
-      <div className="w-full lg:w-60 border-t lg:border-t-0 pt-3 lg:pt-0 border-[#273C2C]">
+      {/* SEÇÃO DA DIREITA */}
+      <div className="w-full lg:w-60 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-200 dark:border-[#273C2C]">
         <CustomSelect
           value={filtroCategoria}
           onChange={(val) => { setFiltroCategoria(val); setPaginaAtual(1); }}
@@ -202,7 +166,6 @@ export default function CompetenceBar({
           placeholder="Todas as Categorias"
         />
       </div>
-
     </section>
   );
 }

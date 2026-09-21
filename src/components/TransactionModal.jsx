@@ -6,15 +6,6 @@ import CustomSelect from './common/CustomSelect';
 
 gsap.registerPlugin(useGSAP);
 
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
-
 const CATEGORIAS_PADRAO = [
   'Alimentação', 'Moradia', 'Transporte', 'Saúde',
   'Educação', 'Lazer', 'Renda', 'Transferência',
@@ -181,15 +172,10 @@ export default function TransactionModal({
     >
       <div
         ref={modalBoxRef}
-        style={{
-          backgroundColor: '#161e18',
-          borderColor: '#273C2C',
-          color: '#FFE2FE'
-        }}
-        className="rounded-3xl p-6 w-full max-w-2xl shadow-2xl border transition-colors duration-200 my-auto max-h-[90vh] overflow-y-auto"
+        className="rounded-3xl p-6 w-full max-w-2xl shadow-2xl border bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C] text-gray-900 dark:text-[#FFE2FE] transition-colors duration-200 my-auto max-h-[90vh] overflow-y-auto"
       >
 
-        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold mb-5 flex items-center gap-2">
+        <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900 dark:text-[#FFE2FE]">
           {editandoId ? '📝 Editar Lançamento' : '✨ Nova Transação'}
         </h2>
 
@@ -199,26 +185,21 @@ export default function TransactionModal({
 
             {/* Descrição */}
             <div className="md:col-span-4">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Descrição
               </label>
               <input
                 type="text"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                style={{
-                  backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                  borderColor: '#626868',
-                  color: '#FFE2FE'
-                }}
-                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] transition-all placeholder:text-[#939196]"
+                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] transition-all bg-gray-50 dark:bg-[#273C2C]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
                 required
               />
             </div>
 
             {/* Valor */}
             <div className="md:col-span-2">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Valor (R$)
               </label>
               <input
@@ -230,12 +211,7 @@ export default function TransactionModal({
                   setValorMascara(valorFormatado);
                 }}
                 placeholder="0,00"
-                style={{
-                  backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                  borderColor: '#626868',
-                  color: '#FFE2FE'
-                }}
-                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] transition-all placeholder:text-[#939196]"
+                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] transition-all bg-gray-50 dark:bg-[#273C2C]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
                 required
               />
             </div>
@@ -243,7 +219,7 @@ export default function TransactionModal({
             {/* Categoria com CustomSelect */}
             <div className="md:col-span-3 relative z-30">
               <div className="flex justify-between items-center mb-1">
-                <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-[#D3C1D2]">
                   Categoria
                 </label>
                 <button
@@ -252,8 +228,7 @@ export default function TransactionModal({
                     setModoTexto(!modoTexto);
                     setCategoria("");
                   }}
-                  style={{ color: '#D3C1D2' }}
-                  className="text-xs font-semibold hover:underline cursor-pointer"
+                  className="text-xs font-semibold text-[#273C2C] dark:text-[#D3C1D2] hover:underline cursor-pointer"
                 >
                   {modoTexto ? "📋 Ver Lista" : "➕ Nova Categoria"}
                 </button>
@@ -266,12 +241,7 @@ export default function TransactionModal({
                     value={category}
                     onChange={(e) => setCategoria(e.target.value)}
                     placeholder="Nome da nova categoria"
-                    style={{
-                      backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                      borderColor: '#626868',
-                      color: '#FFE2FE'
-                    }}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] transition-all placeholder:text-[#939196]"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] transition-all bg-gray-50 dark:bg-[#273C2C]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
                     required
                     autoFocus
                   />
@@ -288,7 +258,7 @@ export default function TransactionModal({
 
             {/* Dados de Pagamento */}
             <div className="md:col-span-3">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Dados de Pagamento (Opcional)
               </label>
               <input
@@ -296,55 +266,40 @@ export default function TransactionModal({
                 value={dadosPagamento}
                 onChange={(e) => setDadosPagamento(e.target.value)}
                 placeholder="Chave Pix, Conta, Banco..."
-                style={{
-                  backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                  borderColor: '#626868',
-                  color: '#FFE2FE'
-                }}
-                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] transition-all placeholder:text-[#939196]"
+                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] transition-all bg-gray-50 dark:bg-[#273C2C]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]"
               />
             </div>
 
             {/* Data Lançamento */}
             <div className="md:col-span-3">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Data do Lançamento
               </label>
               <input
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                style={{
-                  backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                  borderColor: '#626868',
-                  color: '#FFE2FE'
-                }}
-                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] cursor-pointer"
+                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] cursor-pointer bg-gray-50 dark:bg-[#273C2C]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]"
                 required
               />
             </div>
 
             {/* Data Vencimento */}
             <div className="md:col-span-3">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Data de Vencimento
               </label>
               <input
                 type="date"
                 value={dataVencimento}
                 onChange={(e) => setDataVencimento(e.target.value)}
-                style={{
-                  backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                  borderColor: '#626868',
-                  color: '#FFE2FE'
-                }}
-                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] cursor-pointer"
+                className="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] cursor-pointer bg-gray-50 dark:bg-[#273C2C]/25 border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]"
               />
             </div>
 
             {/* Tipo (com CustomSelect) */}
             <div className="md:col-span-3 relative z-20">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Tipo
               </label>
               <CustomSelect
@@ -356,7 +311,7 @@ export default function TransactionModal({
 
             {/* Status (com CustomSelect) */}
             <div className="md:col-span-3 relative z-20">
-              <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-[#D3C1D2]">
                 Status
               </label>
               <CustomSelect
@@ -368,48 +323,39 @@ export default function TransactionModal({
 
             {/* Repetição / Parcelamento */}
             {!editandoId && (
-              <div 
-                style={{
-                  backgroundColor: 'rgba(39, 60, 44, 0.25)',
-                  borderColor: '#273C2C'
-                }}
-                className="md:col-span-6 border p-4 rounded-2xl space-y-3 mt-1 overflow-hidden"
-              >
-                <label style={{ color: '#FFE2FE' }} className="flex items-center gap-2.5 text-xs font-bold cursor-pointer select-none">
+              <div className="md:col-span-6 border p-4 rounded-2xl space-y-3 mt-1 overflow-hidden bg-gray-50 dark:bg-[#273C2C]/25 border-gray-200 dark:border-[#273C2C]">
+                <label className="flex items-center gap-2.5 text-xs font-bold cursor-pointer select-none text-gray-900 dark:text-[#FFE2FE]">
                   <input
                     type="checkbox"
                     checked={repetir}
                     onChange={(e) => setRepetir(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#626868] focus:ring-0 cursor-pointer accent-[#D3C1D2]"
+                    className="w-4 h-4 rounded border-gray-300 dark:border-[#626868] focus:ring-0 cursor-pointer accent-[#273C2C] dark:accent-[#D3C1D2]"
                   />
                   <span>Repetir lançamento / Parcelamento</span>
                 </label>
 
                 <div ref={secaoRepetirRef} className="overflow-hidden opacity-0 h-0">
-                  <div style={{ borderColor: '#626868' }} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-dashed">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-dashed border-gray-300 dark:border-[#626868]">
                     <div className="space-y-1">
-                      <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase">
+                      <label className="block text-xs font-bold uppercase text-gray-700 dark:text-[#D3C1D2]">
                         Frequência
                       </label>
-                      <div 
-                        style={{ backgroundColor: '#161e18', borderColor: '#626868' }}
-                        className="relative flex border p-1 rounded-xl gap-1"
-                      >
+                      <div className="relative flex border p-1 rounded-xl gap-1 bg-white dark:bg-[#161e18] border-gray-300 dark:border-[#626868]">
 
                         <div
                           ref={pillFrequenciaRef}
-                          style={{ backgroundColor: '#D3C1D2' }}
-                          className="absolute top-1 bottom-1 left-0 rounded-lg pointer-events-none z-0"
+                          className="absolute top-1 bottom-1 left-0 rounded-lg pointer-events-none z-0 bg-[#273C2C] dark:bg-[#D3C1D2]"
                         />
 
                         <button
                           type="button"
                           ref={btnFixoRef}
                           onClick={() => setTipoRepeticao('fixo')}
-                          style={{
-                            color: tipoRepeticao === 'fixo' ? '#273C2C' : '#939196'
-                          }}
-                          className="relative z-10 flex-1 text-xs font-bold py-1.5 rounded-lg transition-colors cursor-pointer"
+                          className={`relative z-10 flex-1 text-xs font-bold py-1.5 rounded-lg transition-colors cursor-pointer ${
+                            tipoRepeticao === 'fixo' 
+                              ? 'text-white dark:text-[#273C2C]' 
+                              : 'text-gray-600 dark:text-[#939196]'
+                          }`}
                         >
                           Fixo Mensal
                         </button>
@@ -417,10 +363,11 @@ export default function TransactionModal({
                           type="button"
                           ref={btnParceladoRef}
                           onClick={() => setTipoRepeticao('parcelado')}
-                          style={{
-                            color: tipoRepeticao === 'parcelado' ? '#273C2C' : '#939196'
-                          }}
-                          className="relative z-10 flex-1 text-xs font-bold py-1.5 rounded-lg transition-colors cursor-pointer"
+                          className={`relative z-10 flex-1 text-xs font-bold py-1.5 rounded-lg transition-colors cursor-pointer ${
+                            tipoRepeticao === 'parcelado' 
+                              ? 'text-white dark:text-[#273C2C]' 
+                              : 'text-gray-600 dark:text-[#939196]'
+                          }`}
                         >
                           Parcelado
                         </button>
@@ -429,7 +376,7 @@ export default function TransactionModal({
 
                     {tipoRepeticao === 'parcelado' ? (
                       <div className="space-y-1">
-                        <label style={{ color: '#D3C1D2' }} className="block text-xs font-bold uppercase">
+                        <label className="block text-xs font-bold uppercase text-gray-700 dark:text-[#D3C1D2]">
                           Nº de Parcelas
                         </label>
                         <input
@@ -438,23 +385,11 @@ export default function TransactionModal({
                           max="72"
                           value={numeroParcelas}
                           onChange={(e) => setNumeroParcelas(Math.max(2, Number(e.target.value)))}
-                          style={{
-                            backgroundColor: '#161e18',
-                            borderColor: '#626868',
-                            color: '#FFE2FE'
-                          }}
-                          className="w-full px-3.5 py-1.5 border rounded-xl text-xs font-bold focus:outline-none focus:border-[#D3C1D2] transition-all"
+                          className="w-full px-3.5 py-1.5 border rounded-xl text-xs font-bold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] transition-all bg-white dark:bg-[#161e18] border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]"
                         />
                       </div>
                     ) : (
-                      <div 
-                        style={{
-                          backgroundColor: '#161e18',
-                          borderColor: '#273C2C',
-                          color: '#939196'
-                        }}
-                        className="flex items-center justify-center text-center px-3 text-xs font-medium rounded-xl border mt-4 sm:mt-0"
-                      >
+                      <div className="flex items-center justify-center text-center px-3 text-xs font-medium rounded-xl border mt-4 sm:mt-0 bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C] text-gray-600 dark:text-[#939196]">
                         Lança automaticamente este valor para os próximos 12 meses.
                       </div>
                     )}
@@ -466,19 +401,17 @@ export default function TransactionModal({
           </div>
 
           {/* Botões do Rodapé */}
-          <div style={{ borderColor: '#273C2C' }} className="flex justify-end space-x-2 pt-4 border-t">
+          <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200 dark:border-[#273C2C]">
             <button
               type="button"
               onClick={() => fecharComAnimacao(null)}
-              style={{ backgroundColor: '#273C2C', color: '#D3C1D2' }}
-              className="px-4 py-2 text-xs font-bold rounded-xl hover:opacity-80 transition-opacity cursor-pointer"
+              className="px-4 py-2 text-xs font-bold rounded-xl transition-opacity cursor-pointer bg-gray-200 dark:bg-[#273C2C] text-gray-700 dark:text-[#D3C1D2] hover:opacity-80"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
-              className="px-5 py-2 text-xs font-bold rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="px-5 py-2 text-xs font-bold rounded-xl shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
             >
               {editandoId ? 'Atualizar' : 'Salvar'}
             </button>

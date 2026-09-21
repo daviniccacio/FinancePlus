@@ -26,15 +26,6 @@ import Configuracoes from './components/Config';
 // Registro do plugin GSAP para React
 gsap.registerPlugin(useGSAP);
 
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
-
 export default function App() {
   const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
   
@@ -69,7 +60,7 @@ export default function App() {
   const [limites, setLimites] = useState({});
   const [dark, setDark] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('theme') === 'dark';
-    return true; // Padrão escuro ativado para harmonizar com a paleta
+    return true; // Padrão escuro ativado
   });
 
   // 🌟 ANIMAÇÃO GSAP: Entrada automática em qualquer troca de rota
@@ -302,16 +293,10 @@ export default function App() {
   // Loader de verificação inicial de sessão
   if (carregandoSessao) {
     return (
-      <div 
-        style={{ backgroundColor: '#1a281e', color: '#FFE2FE' }} 
-        className="min-h-screen flex items-center justify-center font-sans"
-      >
+      <div className="min-h-screen flex items-center justify-center font-sans bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]">
         <div className="flex flex-col items-center gap-3">
-          <div 
-            style={{ borderColor: '#D3C1D2', borderTopColor: 'transparent' }} 
-            className="w-8 h-8 border-4 rounded-full animate-spin"
-          />
-          <p style={{ color: '#D3C1D2' }} className="text-xs font-semibold">A carregar o FinancePlus...</p>
+          <div className="w-8 h-8 border-4 border-[#273C2C] dark:border-[#D3C1D2] border-t-transparent dark:border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-gray-600 dark:text-[#D3C1D2]">A carregar o FinancePlus...</p>
         </div>
       </div>
     );
@@ -325,9 +310,9 @@ export default function App() {
           position="bottom-right" 
           toastOptions={{
             style: {
-              background: '#161e18',
-              color: '#FFE2FE',
-              border: '1px solid #273C2C',
+              background: dark ? '#161e18' : '#ffffff',
+              color: dark ? '#FFE2FE' : '#1f2937',
+              border: dark ? '1px solid #273C2C' : '1px solid #e5e7eb',
               fontSize: '12px',
               borderRadius: '12px',
             },
@@ -339,19 +324,16 @@ export default function App() {
   }
 
   return (
-    <div 
-      style={{ backgroundColor: '#1a281e', color: '#FFE2FE' }} 
-      className="min-h-screen flex items-start transition-colors duration-200 font-sans"
-    >
+    <div className="min-h-screen flex items-start transition-colors duration-200 font-sans bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]">
       
       {/* Toaster Dinâmico */}
       <Toaster 
         position="bottom-right" 
         toastOptions={{
           style: {
-            background: '#161e18',
-            color: '#FFE2FE',
-            border: '1px solid #273C2C',
+            background: dark ? '#161e18' : '#ffffff',
+            color: dark ? '#FFE2FE' : '#1f2937',
+            border: dark ? '1px solid #273C2C' : '1px solid #e5e7eb',
             fontSize: '12px',
             borderRadius: '12px',
           },
@@ -385,12 +367,20 @@ export default function App() {
                   <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center min-h-12">
                       <div>
-                        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">Painel de Controle</h2>
-                        <p style={{ color: '#D3C1D2' }} className="text-xs font-medium">Análise visual e estatística consolidada.</p>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Painel de Controle</h2>
+                        <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Análise visual e estatística consolidada.</p>
                       </div>
                     </div>
-                    <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
-                    <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
+                    
+                    {/* 🌟 NÍVEL z-30: Garante que os seletores de competência abram por cima de tudo */}
+                    <div className="relative z-30">
+                      <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+                    </div>
+
+                    {/* 🌟 NÍVEL z-10: Conteúdo da Dashboard */}
+                    <div className="relative z-10">
+                      <DashboardView totalEntradas={totalEntradas} totalSaidas={totalSaidas} saldoAtual={saldoAtual} transacoesFiltradas={transacoesFiltradas} limites={limites} setLimites={setLimites} />
+                    </div>
                   </main>
                 </div>
               </ProtectedRoute>
@@ -406,20 +396,31 @@ export default function App() {
                   <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center min-h-12">
                       <div>
-                        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">Lançamentos</h2>
-                        <p style={{ color: '#D3C1D2' }} className="text-xs font-medium">Histórico detalhado das transações.</p>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Lançamentos</h2>
+                        <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Histórico detalhado das transações.</p>
                       </div>
                       <button 
                         onClick={() => setIsModalAberto(true)} 
-                        style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
                       >
                         <Plus className="w-4 h-4" /> Novo Lançamento
                       </button>
                     </div>
-                    <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
-                    <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
-                    <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
+
+                    {/* 🌟 NÍVEL z-30: Garante sobreposição dos seletores da barra de competência */}
+                    <div className="relative z-30">
+                      <CompetenceBar filtroCompetencia={filtroCompetencia} setFiltroCompetencia={setFiltroCompetencia} filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} setPaginaAtual={setPaginaAtual} />
+                    </div>
+
+                    {/* 🌟 NÍVEL z-20: Garante que os seletores de categoria/status do FilterCenter abram sobre a Tabela */}
+                    <div className="relative z-20">
+                      <FilterCenter buscaTexto={buscaTexto} setBuscaTexto={setBuscaTexto} filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria} filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} categoriasUnicas={categoriasUnicas} setPaginaAtual={setPaginaAtual} />
+                    </div>
+
+                    {/* 🌟 NÍVEL z-10: Tabela de Histórico de Lançamentos */}
+                    <div className="relative z-10">
+                      <TransactionTable carregando={carregando} transacoesPaginadas={transacoesPaginadas} totalPaginas={totalPaginas} paginaAtual={paginaAtual} setPaginaAtual={setPaginaAtual} setIsModalAberto={setIsModalAberto} exportarPDF={exportarPDF} prepararEdicao={prepararEdicao} setIdExclusaoConfirmar={setIdExclusaoConfirmar} />
+                    </div>
                   </main>
                 </div>
               </ProtectedRoute>
@@ -435,8 +436,8 @@ export default function App() {
                   <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center min-h-12">
                       <div>
-                        <h2 style={{ color: '#FFE2FE' }} className="text-xl font-bold tracking-tight">Ajustes</h2>
-                        <p style={{ color: '#D3C1D2' }} className="text-xs font-medium">Gerencie preferências e segurança.</p>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Ajustes</h2>
+                        <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Gerencie preferências e segurança.</p>
                       </div>
                     </div>
                     <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />

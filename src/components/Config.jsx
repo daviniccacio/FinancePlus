@@ -14,7 +14,7 @@ export default function Configuracoes({ session, onLogout }) {
   const [prevSessionName, setPrevSessionName] = useState(session?.user?.user_metadata?.full_name);
   const [carregandoPerfil, setCarregandoPerfil] = useState(false);
 
-  // Sincronização limpa do estado sem disparar renderização em cascata no useEffect
+  // Sincronização do nome do utilizador com os metadados da sessão
   const currentSessionName = session?.user?.user_metadata?.full_name;
   if (currentSessionName !== prevSessionName) {
     setPrevSessionName(currentSessionName);
@@ -26,7 +26,7 @@ export default function Configuracoes({ session, onLogout }) {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [carregandoSenha, setCarregandoSenha] = useState(false);
 
-  // Estados de Exportação / Importação
+  // Estados de Exportação / Importação / Reset
   const [formatoExport, setFormatoExport] = useState('excel');
   const [carregandoExport, setCarregandoExport] = useState(false);
   const [carregandoImport, setCarregandoImport] = useState(false);
@@ -36,7 +36,7 @@ export default function Configuracoes({ session, onLogout }) {
   const [moedaPadrao, setMoedaPadrao] = useState('BRL');
   const [notificarVencimentos, setNotificarVencimentos] = useState(true);
 
-  // Auxiliar de Formatação de Data
+  // Auxiliar para formatação de data
   const formatarDataSegura = (dataInput) => {
     if (!dataInput) return '';
     const apenasData = dataInput.split('T')[0];
@@ -48,7 +48,7 @@ export default function Configuracoes({ session, onLogout }) {
     return dataInput;
   };
 
-  // 1. Atualizar Nome do Usuário no Supabase Metadata
+  // 1. Atualizar Nome do Utilizador no Supabase
   const lidarComAtualizacaoPerfil = async (e) => {
     e.preventDefault();
     try {
@@ -66,7 +66,7 @@ export default function Configuracoes({ session, onLogout }) {
     }
   };
 
-  // 2. Alteração de Senha do Usuário
+  // 2. Alteração de Senha
   const lidarComAlteracaoSenha = async (e) => {
     e.preventDefault();
     if (novaSenha !== confirmarSenha) {
@@ -92,7 +92,7 @@ export default function Configuracoes({ session, onLogout }) {
     }
   };
 
-  // 3. Exportação de Dados
+  // 3. Funções de Exportação (JSON, Excel Contábil, PDF)
   const baixarJSON = (transacoes) => {
     const dadosJsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transacoes, null, 2));
     const link = document.createElement('a');
@@ -119,7 +119,7 @@ export default function Configuracoes({ session, onLogout }) {
     const linhaCabecalho = worksheet.getRow(1);
     linhaCabecalho.height = 26;
     linhaCabecalho.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFF' } };
-    linhaCabecalho.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '2563EB' } };
+    linhaCabecalho.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '273C2C' } };
     linhaCabecalho.alignment = { vertical: 'middle', horizontal: 'left' };
     linhaCabecalho.getCell('valor').alignment = { vertical: 'middle', horizontal: 'right' };
 
@@ -173,11 +173,11 @@ export default function Configuracoes({ session, onLogout }) {
     const doc = new jsPDF();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
-    doc.setTextColor(37, 99, 235);
+    doc.setTextColor(39, 60, 44);
     doc.text("FinancePlus", 14, 20);
 
     doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139);
+    doc.setTextColor(98, 104, 104);
     doc.setFont("helvetica", "normal");
     doc.text("Relatório Geral de Transações Financeiras", 14, 26);
     doc.text(`Gerado em: ${formatarDataSegura(new Date().toISOString())}`, 14, 31);
@@ -187,7 +187,7 @@ export default function Configuracoes({ session, onLogout }) {
 
     let y = 45;
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 41, 59);
+    doc.setTextColor(39, 60, 44);
     doc.text("Data", 14, y);
     doc.text("Descrição", 40, y);
     doc.text("Categoria", 100, y);
@@ -250,7 +250,7 @@ export default function Configuracoes({ session, onLogout }) {
     }
   };
 
-  // 4. Funcionalidade de Importar Backup (JSON)
+  // 4. Importar Backup JSON
   const importarBackupJSON = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -293,7 +293,7 @@ export default function Configuracoes({ session, onLogout }) {
     reader.readAsText(file);
   };
 
-  // 5. Reset do Histórico
+  // 5. Resetar Histórico
   const resetarDadosConta = async () => {
     const confirmou = window.confirm(
       "ATENÇÃO: Tens a certeza absoluta de que desejas APAGAR permanentemente todas as tuas transações? Esta ação não pode ser desfeita."
@@ -316,49 +316,52 @@ export default function Configuracoes({ session, onLogout }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-zinc-900 rounded-xl shadow-md transition-colors duration-200 border border-gray-100 dark:border-zinc-800">
+    <div className="max-w-4xl mx-auto p-6 rounded-3xl border shadow-md transition-colors duration-200 bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C] text-gray-900 dark:text-[#FFE2FE] font-sans">
 
       {/* Cabeçalho */}
-      <div className="border-b border-gray-200 dark:border-zinc-800 pb-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">Configurações do Sistema</h1>
-        <p className="text-sm text-gray-500 dark:text-zinc-400">Gerencie sua conta, preferências e dados locais do FinancePlus.</p>
+      <div className="border-b pb-4 mb-6 border-gray-200 dark:border-[#273C2C]">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-[#FFE2FE]">Configurações do Sistema</h1>
+        <p className="text-xs font-medium text-gray-500 dark:text-[#D3C1D2] mt-0.5">Gerencie sua conta, preferências e dados locais do FinancePlus.</p>
       </div>
 
       {/* Navegação por Abas */}
-      <div className="flex space-x-2 md:space-x-4 mb-6 border-b border-gray-100 dark:border-zinc-800 pb-2">
+      <div className="flex space-x-2 md:space-x-3 mb-6 border-b pb-2 border-gray-200 dark:border-[#273C2C]">
         <button
+          type="button"
           onClick={() => setAbaAtiva('ajustes')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             abaAtiva === 'ajustes'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
-              : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+              ? 'bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C] shadow-xs'
+              : 'text-gray-600 dark:text-[#939196] hover:text-gray-900 dark:hover:text-[#FFE2FE]'
           }`}
         >
-          <User size={18} />
+          <User size={16} />
           Minha Conta
         </button>
 
         <button
+          type="button"
           onClick={() => setAbaAtiva('preferencias')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             abaAtiva === 'preferencias'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
-              : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+              ? 'bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C] shadow-xs'
+              : 'text-gray-600 dark:text-[#939196] hover:text-gray-900 dark:hover:text-[#FFE2FE]'
           }`}
         >
-          <Bell size={18} />
+          <Bell size={16} />
           Preferências
         </button>
 
         <button
+          type="button"
           onClick={() => setAbaAtiva('sobre')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             abaAtiva === 'sobre'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
-              : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+              ? 'bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C] shadow-xs'
+              : 'text-gray-600 dark:text-[#939196] hover:text-gray-900 dark:hover:text-[#FFE2FE]'
           }`}
         >
-          <Info size={18} />
+          <Info size={16} />
           Sobre o Projeto
         </button>
       </div>
@@ -370,46 +373,46 @@ export default function Configuracoes({ session, onLogout }) {
           <div className="space-y-6">
 
             {/* Informações Pessoais & Nome */}
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                <Shield size={18} className="text-blue-500" />
+            <div className="p-4 rounded-2xl border space-y-4 bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+              <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-700 dark:text-[#D3C1D2]">
+                <Shield size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                 Perfil do Utilizador
               </h3>
 
               <form onSubmit={lidarComAtualizacaoPerfil} className="flex flex-col sm:flex-row items-end gap-3 max-w-xl">
                 <div className="w-full space-y-1">
-                  <label className="text-xs font-semibold text-gray-600 dark:text-zinc-300">Nome de Exibição</label>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-[#D3C1D2]">Nome de Exibição</label>
                   <input
                     type="text"
                     placeholder="Seu Nome Completo"
                     value={nomeUsuario}
                     onChange={(e) => setNomeUsuario(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                    className="w-full rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none transition-all bg-white dark:bg-[#161e18] border border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] focus:border-[#273C2C] dark:focus:border-[#D3C1D2]"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={carregandoPerfil}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                  className="px-4 py-2 font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50 shrink-0 bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
                 >
                   {carregandoPerfil ? 'A guardar...' : 'Salvar Nome'}
                 </button>
               </form>
 
-              <div className="pt-2 border-t border-gray-200/60 dark:border-zinc-800 space-y-1">
-                <p className="text-xs text-gray-600 dark:text-zinc-300">
-                  <span className="font-semibold text-gray-400 dark:text-zinc-500">E-mail conectado:</span> {session?.user?.email}
+              <div className="pt-2 border-t space-y-1 border-gray-200 dark:border-[#273C2C]">
+                <p className="text-xs text-gray-600 dark:text-[#D3C1D2]">
+                  <span className="font-semibold text-gray-500 dark:text-[#939196]">E-mail conectado:</span> {session?.user?.email}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-zinc-300">
-                  <span className="font-semibold text-gray-400 dark:text-zinc-500">ID de Segurança:</span> <code className="bg-gray-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono">{session?.user?.id}</code>
+                <p className="text-xs text-gray-600 dark:text-[#D3C1D2]">
+                  <span className="font-semibold text-gray-500 dark:text-[#939196]">ID de Segurança:</span> <code className="px-1.5 py-0.5 rounded text-[11px] font-mono bg-gray-200 dark:bg-[#273C2C] text-gray-800 dark:text-[#FFE2FE]">{session?.user?.id}</code>
                 </p>
               </div>
             </div>
 
             {/* Alteração de Senha */}
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Lock size={18} className="text-blue-500" />
+            <div className="p-4 rounded-2xl border bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2 text-gray-700 dark:text-[#D3C1D2]">
+                <Lock size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                 Alterar Senha de Acesso
               </h3>
               <form onSubmit={lidarComAlteracaoSenha} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
@@ -419,7 +422,7 @@ export default function Configuracoes({ session, onLogout }) {
                   required
                   value={novaSenha}
                   onChange={(e) => setNovaSenha(e.target.value)}
-                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                  className="rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none transition-all bg-white dark:bg-[#161e18] border border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] focus:border-[#273C2C] dark:focus:border-[#D3C1D2]"
                 />
                 <input
                   type="password"
@@ -427,13 +430,13 @@ export default function Configuracoes({ session, onLogout }) {
                   required
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
-                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                  className="rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none transition-all bg-white dark:bg-[#161e18] border border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] focus:border-[#273C2C] dark:focus:border-[#D3C1D2]"
                 />
                 <div className="sm:col-span-2 flex justify-start pt-1">
                   <button
                     type="submit"
                     disabled={carregandoSenha}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 py-2 font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50 bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
                   >
                     <RefreshCw size={14} className={carregandoSenha ? "animate-spin" : ""} />
                     {carregandoSenha ? 'Atualizando...' : 'Atualizar Senha'}
@@ -443,21 +446,21 @@ export default function Configuracoes({ session, onLogout }) {
             </div>
 
             {/* Portabilidade & Importação */}
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                <Download size={18} className="text-blue-500" />
+            <div className="p-4 rounded-2xl border space-y-4 bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+              <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-700 dark:text-[#D3C1D2]">
+                <Download size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                 Portabilidade e Backup
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Exportar */}
-                <div className="space-y-2 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700/60">
-                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Exportar Dados</h4>
+                <div className="space-y-2 p-3.5 rounded-xl border bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C]">
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-[#FFE2FE]">Exportar Dados</h4>
                   <div className="flex flex-col gap-2">
                     <select
                       value={formatoExport}
                       onChange={(e) => setFormatoExport(e.target.value)}
-                      className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none"
+                      className="rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none bg-gray-50 dark:bg-[#273C2C]/30 border border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]"
                     >
                       <option value="excel">Planilha Contábil (.xlsx)</option>
                       <option value="pdf">Documento PDF (.pdf)</option>
@@ -465,9 +468,10 @@ export default function Configuracoes({ session, onLogout }) {
                     </select>
 
                     <button
+                      type="button"
                       onClick={exportarDadosFinanceiros}
                       disabled={carregandoExport}
-                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Download size={14} />
                       {carregandoExport ? 'A exportar...' : 'Descarregar'}
@@ -476,11 +480,11 @@ export default function Configuracoes({ session, onLogout }) {
                 </div>
 
                 {/* Importar */}
-                <div className="space-y-2 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700/60">
-                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Restaurar Backup (.json)</h4>
-                  <p className="text-[10px] text-gray-400">Importe transações salvas de outro arquivo JSON do FinancePlus.</p>
+                <div className="space-y-2 p-3.5 rounded-xl border bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#273C2C]">
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-[#FFE2FE]">Restaurar Backup (.json)</h4>
+                  <p className="text-[11px] font-medium text-gray-500 dark:text-[#939196]">Importe transações salvas de outro arquivo JSON do FinancePlus.</p>
                   
-                  <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer">
+                  <label className="flex items-center justify-center gap-1.5 px-3 py-2 font-bold text-xs rounded-xl transition-all cursor-pointer bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]">
                     <Upload size={14} />
                     {carregandoImport ? 'Importando...' : 'Selecionar Ficheiro'}
                     <input type="file" accept=".json" onChange={importarBackupJSON} className="hidden" disabled={carregandoImport} />
@@ -489,18 +493,20 @@ export default function Configuracoes({ session, onLogout }) {
               </div>
             </div>
 
-            {/* Zona de Risco */}
-            <div className="p-4 border border-red-100 dark:border-red-900/30 rounded-xl bg-red-50/30 dark:bg-red-950/10 space-y-3">
-              <h3 className="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Zona de Perigo</h3>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-b border-red-100/50 dark:border-red-900/20 pb-3">
+            {/* Zona de Perigo */}
+            <div className="p-4 rounded-2xl border space-y-3 bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40">
+              <h3 className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Zona de Perigo</h3>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-b pb-3 border-rose-200/60 dark:border-rose-900/30">
                 <div>
-                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Resetar Dados Financeiros</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Apaga permanentemente todo o histórico de lançamentos sem excluir o seu perfil.</p>
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-[#FFE2FE]">Resetar Dados Financeiros</h4>
+                  <p className="text-[11px] font-medium text-gray-600 dark:text-[#D3C1D2]">Apaga permanentemente todo o histórico de lançamentos sem excluir o seu perfil.</p>
                 </div>
                 <button
+                  type="button"
                   onClick={resetarDadosConta}
                   disabled={carregandoReset}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   <Trash2 size={14} />
                   Limpar Histórico
@@ -509,12 +515,13 @@ export default function Configuracoes({ session, onLogout }) {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 <div>
-                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Desconexão Protegida</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Encerra de forma segura a sua sessão ativa neste dispositivo.</p>
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-[#FFE2FE]">Desconexão Protegida</h4>
+                  <p className="text-[11px] font-medium text-gray-600 dark:text-[#D3C1D2]">Encerra de forma segura a sua sessão ativa neste dispositivo.</p>
                 </div>
                 <button
+                  type="button"
                   onClick={onLogout}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shrink-0"
+                  className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
                 >
                   Desconectar da Conta
                 </button>
@@ -527,15 +534,15 @@ export default function Configuracoes({ session, onLogout }) {
         {/* ABA 2: PREFERÊNCIAS */}
         {abaAtiva === 'preferencias' && (
           <div className="space-y-6">
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                <DollarSign size={18} className="text-blue-500" />
+            <div className="p-4 rounded-2xl border space-y-4 bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+              <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-700 dark:text-[#D3C1D2]">
+                <DollarSign size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                 Formato Monetário
               </h3>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Moeda Padrão da Aplicação</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Define o símbolo monetário exibido nos relatórios e tabelas.</p>
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-[#FFE2FE]">Moeda Padrão da Aplicação</h4>
+                  <p className="text-[11px] font-medium text-gray-500 dark:text-[#939196]">Define o símbolo monetário exibido nos relatórios e tabelas.</p>
                 </div>
                 <select
                   value={moedaPadrao}
@@ -543,7 +550,7 @@ export default function Configuracoes({ session, onLogout }) {
                     setMoedaPadrao(e.target.value);
                     toast.success('Formato monetário atualizado!');
                   }}
-                  className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-zinc-100 focus:outline-none"
+                  className="rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none bg-white dark:bg-[#161e18] border border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]"
                 >
                   <option value="BRL">Real Brasileiro (R$)</option>
                   <option value="USD">Dólar Americano ($)</option>
@@ -552,15 +559,15 @@ export default function Configuracoes({ session, onLogout }) {
               </div>
             </div>
 
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
-              <h3 className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                <Bell size={18} className="text-blue-500" />
+            <div className="p-4 rounded-2xl border space-y-4 bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+              <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-700 dark:text-[#D3C1D2]">
+                <Bell size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                 Lembretes do Sistema
               </h3>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-gray-700 dark:text-zinc-200">Notificação de Contas a Vencer</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">Exibe alertas na barra superior para lançamentos próximos do vencimento.</p>
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-[#FFE2FE]">Notificação de Contas a Vencer</h4>
+                  <p className="text-[11px] font-medium text-gray-500 dark:text-[#939196]">Exibe alertas na barra superior para lançamentos próximos do vencimento.</p>
                 </div>
                 <input
                   type="checkbox"
@@ -569,7 +576,7 @@ export default function Configuracoes({ session, onLogout }) {
                     setNotificarVencimentos(e.target.checked);
                     toast.success('Preferência de notificação salva!');
                   }}
-                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                  className="w-4 h-4 rounded cursor-pointer accent-[#273C2C] dark:accent-[#D3C1D2]"
                 />
               </div>
             </div>
@@ -578,39 +585,42 @@ export default function Configuracoes({ session, onLogout }) {
 
         {/* ABA 3: SOBRE O PROJETO */}
         {abaAtiva === 'sobre' && (
-          <div className="space-y-6 text-gray-600 dark:text-zinc-300">
+          <div className="space-y-6 text-gray-700 dark:text-[#FFE2FE]">
             <div className="text-center py-4">
-              <h2 className="text-3xl font-black text-blue-600 dark:text-blue-400">FinancePlus</h2>
-              <p className="text-sm font-semibold text-gray-400 mt-1">Versão 1.6.0</p>
-              <p className="mt-4 max-w-xl mx-auto text-sm leading-relaxed">
+              <h2 className="text-3xl font-black text-[#273C2C] dark:text-[#D3C1D2]">FinancePlus</h2>
+              <p className="text-xs font-bold text-gray-400 dark:text-[#939196] mt-1">Versão 1.6.0</p>
+              <p className="mt-4 max-w-xl mx-auto text-xs font-medium leading-relaxed text-gray-600 dark:text-[#D3C1D2]">
                 Uma aplicação moderna de controle financeiro desenvolvida para oferecer autonomia, clareza visual e inteligência na gestão de receitas e despesas.
               </p>
             </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800">
-                <h4 className="font-semibold text-gray-800 dark:text-zinc-100 mb-2 flex items-center gap-2">
-                  <Code size={16} className="text-blue-500" />
+              <div className="p-4 rounded-2xl border bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+                <h4 className="font-bold text-xs mb-2 flex items-center gap-2 text-gray-900 dark:text-[#FFE2FE]">
+                  <Code size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                   Tecnologias Utilizadas
                 </h4>
-                <ul className="list-disc list-inside text-sm space-y-1 text-gray-500 dark:text-zinc-400">
+                <ul className="list-disc list-inside text-xs font-medium space-y-1 text-gray-600 dark:text-[#D3C1D2]">
                   <li>React & Vite</li>
-                  <li>Tailwind CSS</li>
+                  <li>Tailwind CSS & GSAP</li>
                   <li>Supabase (Banco de dados & Autenticação)</li>
                   <li>ExcelJS (Planilhas nativas inteligentes)</li>
                   <li>jsPDF (Geração de relatórios PDF)</li>
                 </ul>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800">
-                <h4 className="font-semibold text-gray-800 dark:text-zinc-100 mb-2 flex items-center gap-2">
-                  <FileText size={16} className="text-blue-500" />
+
+              <div className="p-4 rounded-2xl border bg-gray-50 dark:bg-[#273C2C]/20 border-gray-200 dark:border-[#273C2C]">
+                <h4 className="font-bold text-xs mb-2 flex items-center gap-2 text-gray-900 dark:text-[#FFE2FE]">
+                  <FileText size={16} className="text-[#273C2C] dark:text-[#D3C1D2]" />
                   Licenciamento
                 </h4>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
-                  Este projeto está protegido legalmente sob a **Licença MIT**. O software é de código aberto para uso comercial, modificação e distribuição.
+                <p className="text-xs font-medium leading-relaxed text-gray-600 dark:text-[#D3C1D2]">
+                  Este projeto está protegido legalmente sob a <b>Licença MIT</b>. O software é de código aberto para uso comercial, modificação e distribuição.
                 </p>
               </div>
             </div>
-            <div className="pt-6 border-t border-gray-100 dark:border-zinc-800 text-center text-xs text-gray-400">
+
+            <div className="pt-6 border-t text-center text-[11px] font-bold border-gray-200 dark:border-[#273C2C] text-gray-400 dark:text-[#939196]">
               Desenvolvido por Davi Nicacio &copy; 2026
             </div>
           </div>

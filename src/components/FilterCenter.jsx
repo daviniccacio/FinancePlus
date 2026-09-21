@@ -5,17 +5,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import CustomSelect from './common/CustomSelect';
 
-// Registro obrigatório do plugin GSAP para React
 gsap.registerPlugin(useGSAP);
-
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
 
 export default function FilterCenter({ 
   buscaTexto, 
@@ -38,19 +28,16 @@ export default function FilterCenter({
     );
   }, { scope: containerRef });
 
-  // Função para atualizar o filtro e retornar à primeira página
   const atualizarFiltro = (setter, valor) => {
     setter(valor);
     setPaginaAtual(1);
   };
 
-  // Mapeia a lista de categorias únicas para o formato esperado pelo CustomSelect
   const opcoesCategoria = [
     { value: '', label: 'Todas Categorias' },
     ...categoriasUnicas.map((c) => ({ value: c, label: c }))
   ];
 
-  // Opções de Status com indicadores visuais
   const opcoesStatus = [
     { value: '', label: 'Todos Status' },
     { value: 'Pago', label: '✅ Pago' },
@@ -60,34 +47,22 @@ export default function FilterCenter({
   return (
     <section 
       ref={containerRef} 
-      style={{
-        backgroundColor: '#161e18',
-        borderColor: '#273C2C',
-      }}
-      className="p-3 rounded-2xl border grid grid-cols-1 sm:grid-cols-3 gap-2.5 shadow-lg transition-colors duration-200 relative z-30 font-sans"
+      className="p-3 rounded-2xl bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] grid grid-cols-1 sm:grid-cols-3 gap-2.5 shadow-xs transition-colors duration-200 relative z-30 font-sans"
     >
       
       {/* 1. CAMPO DE BUSCA POR DESCRIÇÃO */}
       <div className="relative flex items-center w-full">
-        <Search 
-          style={{ color: '#939196' }} 
-          className="w-3.5 h-3.5 absolute left-3 pointer-events-none" 
-        />
+        <Search className="w-3.5 h-3.5 absolute left-3 pointer-events-none text-gray-400 dark:text-[#939196]" />
         <input 
           type="text" 
           placeholder="Buscar descrição..." 
-          style={{
-            backgroundColor: 'rgba(39, 60, 44, 0.25)',
-            borderColor: '#626868',
-            color: '#FFE2FE'
-          }}
-          className="w-full border rounded-xl pl-8 pr-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#D3C1D2] transition-all placeholder:text-[#939196]" 
+          className="w-full bg-gray-50 dark:bg-[#273C2C]/25 border border-gray-200 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196] rounded-xl pl-8 pr-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] transition-all" 
           value={buscaTexto} 
           onChange={(e) => atualizarFiltro(setBuscaTexto, e.target.value)} 
         />
       </div>
 
-      {/* 2. SELETOR PERSONALIZADO DE CATEGORIA (z-30 garante prioridade de sobreposição) */}
+      {/* 2. SELETOR PERSONALIZADO DE CATEGORIA */}
       <div className="relative z-30">
         <CustomSelect
           value={filtroCategoria}
@@ -97,7 +72,7 @@ export default function FilterCenter({
         />
       </div>
 
-      {/* 3. SELETOR PERSONALIZADO DE STATUS (z-20) */}
+      {/* 3. SELETOR PERSONALIZADO DE STATUS */}
       <div className="relative z-20">
         <CustomSelect
           value={filtroStatus}

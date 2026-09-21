@@ -8,15 +8,6 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-/**
- * PALETA DE CORES PERSONALIZADA:
- * 1. Evergreen:       #273C2C
- * 2. Dim Grey:        #626868
- * 3. Rosy Granite:    #939196
- * 4. Thistle:         #D3C1D2
- * 5. Lavender Veil:   #FFE2FE
- */
-
 export default function BudgetPanel({ transacoes = [], limites = {}, setLimites }) {
   const [historicoMetas, setHistoricoMetas] = useState({});
   const [carregandoMetas, setCarregandoMetas] = useState(true);
@@ -244,11 +235,8 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
 
   if (carregandoMetas) {
     return (
-      <div 
-        style={{ backgroundColor: '#161e18', borderColor: '#273C2C', color: '#D3C1D2' }}
-        className="p-8 rounded-3xl border flex flex-col items-center justify-center gap-2 text-xs font-medium"
-      >
-        <Loader2 className="w-5 h-5 animate-spin text-[#D3C1D2]" />
+      <div className="p-8 rounded-3xl bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] flex flex-col items-center justify-center gap-2 text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">
+        <Loader2 className="w-5 h-5 animate-spin text-[#273C2C] dark:text-[#D3C1D2]" />
         Sincronizando metas e orçamentos com a nuvem...
       </div>
     );
@@ -257,21 +245,19 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
   return (
     <div 
       ref={containerRef}
-      style={{ backgroundColor: '#161e18', borderColor: '#273C2C' }}
-      className="p-5 rounded-3xl border shadow-lg space-y-4 font-sans transition-colors duration-200"
+      className="p-5 rounded-3xl bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] shadow-xs space-y-4 font-sans transition-colors duration-200"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-[#D3C1D2]" />
-          <h3 style={{ color: '#D3C1D2' }} className="text-xs font-bold uppercase tracking-wider">
+          <Target className="w-5 h-5 text-[#273C2C] dark:text-[#D3C1D2]" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-[#D3C1D2]">
             Metas e Orçamentos
           </h3>
         </div>
         <button
           type="button"
           onClick={() => setIsCriando(!isCriando)}
-          style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-md"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
         >
           <Plus className="w-3.5 h-3.5" />
           {isCriando ? 'Fechar' : 'Novo Registro'}
@@ -283,22 +269,20 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
           <form 
             ref={formRef}
             onSubmit={lidarComCriacaoMeta} 
-            style={{ backgroundColor: 'rgba(39, 60, 44, 0.4)', borderColor: '#626868' }}
-            className="p-4 rounded-2xl border-2 border-dashed flex flex-col space-y-3 col-span-1 md:col-span-2 backdrop-blur-xs"
+            className="p-4 rounded-2xl bg-gray-50 dark:bg-[#273C2C]/40 border-2 border-dashed border-gray-300 dark:border-[#626868] flex flex-col space-y-3 col-span-1 md:col-span-2 backdrop-blur-xs"
           >
-            <div style={{ color: '#FFE2FE' }} className="text-[11px] font-bold uppercase tracking-wide">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-900 dark:text-[#FFE2FE]">
               Configurar Novo Item
             </div>
             
             <div className="space-y-1">
-              <label style={{ color: '#D3C1D2' }} className="text-[9px] font-bold uppercase block">
+              <label className="text-[9px] font-bold uppercase block text-gray-600 dark:text-[#D3C1D2]">
                 Tipo de Destinação
               </label>
               <select 
                 value={novoTipo} 
                 onChange={(e) => setNovoTipo(e.target.value)}
-                style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
-                className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#D3C1D2] cursor-pointer"
+                className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] cursor-pointer bg-white dark:bg-[#161e18] border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]"
               >
                 <option value="orcamento">Orçamento Mensal (Limite que renova todo mês)</option>
                 <option value="meta">Meta Cofrinho (Acumula histórico de Saídas independente do mês)</option>
@@ -307,7 +291,7 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label style={{ color: '#D3C1D2' }} className="text-[9px] font-bold uppercase block">
+                <label className="text-[9px] font-bold uppercase block text-gray-600 dark:text-[#D3C1D2]">
                   Categoria / Nome
                 </label>
                 <input 
@@ -316,12 +300,11 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
                   required 
                   value={novaCategoria} 
                   onChange={(e) => setNovaCategoria(e.target.value)} 
-                  style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
-                  className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#D3C1D2] placeholder:text-[#939196]" 
+                  className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] bg-white dark:bg-[#161e18] border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]" 
                 />
               </div>
               <div className="space-y-1">
-                <label style={{ color: '#D3C1D2' }} className="text-[9px] font-bold uppercase block">
+                <label className="text-[9px] font-bold uppercase block text-gray-600 dark:text-[#D3C1D2]">
                   Valor Alvo / Limite (R$)
                 </label>
                 <input 
@@ -332,8 +315,7 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
                   step="any" 
                   value={novoLimite} 
                   onChange={(e) => setNovoLimite(e.target.value)} 
-                  style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
-                  className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#D3C1D2] placeholder:text-[#939196]" 
+                  className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#273C2C] dark:focus:border-[#D3C1D2] bg-white dark:bg-[#161e18] border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE] placeholder:text-gray-400 dark:placeholder:text-[#939196]" 
                 />
               </div>
             </div>
@@ -342,15 +324,13 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
               <button 
                 type="button" 
                 onClick={() => setIsCriando(false)} 
-                style={{ backgroundColor: '#273C2C', color: '#D3C1D2' }}
-                className="px-3 py-1.5 rounded-xl text-[10px] font-bold hover:opacity-80 transition-opacity cursor-pointer"
+                className="px-3 py-1.5 rounded-xl text-[10px] font-bold bg-gray-200 dark:bg-[#273C2C] text-gray-700 dark:text-[#D3C1D2] hover:opacity-80 transition-opacity cursor-pointer"
               >
                 Cancelar
               </button>
               <button 
                 type="submit" 
-                style={{ backgroundColor: '#D3C1D2', color: '#273C2C' }}
-                className="px-4 py-1.5 rounded-xl text-[10px] font-bold hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md"
+                className="px-4 py-1.5 rounded-xl text-[10px] font-bold bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C] hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
               >
                 Adicionar
               </button>
@@ -367,36 +347,39 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
           const isEditing = categoriaEmEdicao === categoria;
           
           const porcentagem = limiteDefinido > 0 ? Math.min(Math.round((valorProgresso / limiteDefinido) * 100), 100) : 0;
+          const ehExcedido = !ehMeta && porcentagem >= 100;
 
-          let corBarra = ehMeta ? 'bg-emerald-400' : 'bg-[#D3C1D2]';
-          let corTexto = ehMeta ? 'text-emerald-400' : 'text-[#D3C1D2]';
-          let corCardBg = 'rgba(39, 60, 44, 0.35)';
-          let corCardBorda = '#273C2C';
+          const cardBgClass = ehExcedido
+            ? 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-500/40'
+            : 'bg-gray-50 dark:bg-[#273C2C]/35 border-gray-200 dark:border-[#273C2C]';
 
-          if (!ehMeta && porcentagem >= 100) {
-            corBarra = 'bg-rose-500'; 
-            corTexto = 'text-rose-400'; 
-            corCardBg = 'rgba(98, 48, 48, 0.25)';
-            corCardBorda = 'rgba(244, 63, 94, 0.4)';
-          }
+          const corBarra = ehMeta 
+            ? 'bg-emerald-500 dark:bg-emerald-400' 
+            : ehExcedido 
+              ? 'bg-rose-500' 
+              : 'bg-[#273C2C] dark:bg-[#D3C1D2]';
+
+          const corTexto = ehMeta 
+            ? 'text-emerald-600 dark:text-emerald-400' 
+            : ehExcedido 
+              ? 'text-rose-600 dark:text-rose-400' 
+              : 'text-[#273C2C] dark:text-[#D3C1D2]';
 
           return (
             <div 
               key={categoria} 
-              style={{ backgroundColor: corCardBg, borderColor: corCardBorda }}
-              className="budget-card p-4 rounded-2xl border flex flex-col justify-between space-y-2.5 group transition-all hover:border-[#626868]"
+              className={`budget-card p-4 rounded-2xl border flex flex-col justify-between space-y-2.5 group transition-all hover:border-gray-300 dark:hover:border-[#626868] ${cardBgClass}`}
             >
               <div className="flex justify-between items-start text-xs">
                 <div className="flex flex-col space-y-0.5 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span style={{ color: '#FFE2FE' }} className="font-bold">{categoria}</span>
+                    <span className="font-bold text-gray-900 dark:text-[#FFE2FE]">{categoria}</span>
                     <span 
-                      style={{
-                        backgroundColor: ehMeta ? 'rgba(16, 185, 129, 0.15)' : 'rgba(211, 193, 210, 0.15)',
-                        color: ehMeta ? '#34d399' : '#D3C1D2',
-                        borderColor: ehMeta ? 'rgba(16, 185, 129, 0.3)' : 'rgba(211, 193, 210, 0.3)'
-                      }}
-                      className="text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider border"
+                      className={`text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider border ${
+                        ehMeta
+                          ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-[#34d399] border-emerald-200 dark:border-emerald-500/30'
+                          : 'bg-purple-50 dark:bg-[#D3C1D2]/15 text-purple-700 dark:text-[#D3C1D2] border-purple-200 dark:border-[#D3C1D2]/30'
+                      }`}
                     >
                       {ehMeta ? 'Meta' : 'Orçamento'}
                     </span>
@@ -404,14 +387,13 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
                   
                   {isEditing ? (
                     <div className="flex items-center gap-1 mt-1.5 w-full">
-                      <span style={{ color: '#939196' }} className="text-[10px]">R$</span>
+                      <span className="text-[10px] text-gray-500 dark:text-[#939196]">R$</span>
                       <input 
                         type="number" 
                         value={valorTemporario} 
                         onChange={(e) => setValorTemporario(e.target.value)} 
                         autoFocus 
-                        style={{ backgroundColor: '#161e18', borderColor: '#626868', color: '#FFE2FE' }}
-                        className="w-20 border rounded-lg px-2 py-0.5 text-[11px] font-bold focus:outline-none" 
+                        className="w-20 border rounded-lg px-2 py-0.5 text-[11px] font-bold focus:outline-none bg-white dark:bg-[#161e18] border-gray-300 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]" 
                       />
                       <button 
                         type="button"
@@ -431,21 +413,20 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
                       <button 
                         type="button"
                         onClick={() => setCategoriaEmEdicao(null)} 
-                        style={{ backgroundColor: '#273C2C', color: '#D3C1D2' }}
-                        className="p-1 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
+                        className="p-1 rounded-lg bg-gray-200 dark:bg-[#273C2C] text-gray-700 dark:text-[#D3C1D2] hover:opacity-80 transition-opacity cursor-pointer"
                       >
                         <X className="w-3 h-3" />
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <span style={{ color: '#939196' }} className="text-[10px]">
+                      <span className="text-[10px] text-gray-500 dark:text-[#939196]">
                         Alvo: R$ {limiteDefinido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                       <button 
                         type="button"
                         onClick={() => { setCategoriaEmEdicao(categoria); setValorTemporario(limiteDefinido.toString()); }} 
-                        className="opacity-0 group-hover:opacity-100 text-[#939196] hover:text-[#D3C1D2] transition-all p-0.5 rounded-sm cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#939196] hover:text-gray-700 dark:hover:text-[#D3C1D2] transition-all p-0.5 rounded-sm cursor-pointer"
                       >
                         <Pencil className="w-3 h-3" />
                       </button>
@@ -455,14 +436,14 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
 
                 <div className="text-right">
                   <span className={`font-bold block ${corTexto}`}>{porcentagem}%</span>
-                  <span style={{ color: '#939196' }} className="text-[10px] font-medium block">
+                  <span className="text-[10px] font-medium block text-gray-500 dark:text-[#939196]">
                     {ehMeta ? 'Acumulado: ' : 'Gasto no Mês: '} R$ {valorProgresso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
 
               {/* Barra de Progresso Animada */}
-              <div style={{ backgroundColor: '#273C2C' }} className="w-full h-2 rounded-full overflow-hidden">
+              <div className="w-full h-2 rounded-full overflow-hidden bg-gray-200 dark:bg-[#273C2C]">
                 <div 
                   className={`h-full transition-all duration-700 ease-out ${corBarra}`} 
                   style={{ width: `${porcentagem}%` }} 
@@ -472,21 +453,21 @@ export default function BudgetPanel({ transacoes = [], limites = {}, setLimites 
               <div className="flex items-center gap-1 text-[10px] font-semibold">
                 {ehMeta ? (
                   porcentagem >= 100 ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
+                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Objetivo alcançado! Excelente!
                     </span>
                   ) : (
-                    <span style={{ color: '#D3C1D2' }} className="flex items-center gap-1">
+                    <span className="text-gray-600 dark:text-[#D3C1D2] flex items-center gap-1">
                       <Wallet className="w-3 h-3" /> Guardando parcelas na Meta...
                     </span>
                   )
                 ) : (
                   porcentagem >= 100 ? (
-                    <span className="text-rose-400 flex items-center gap-1">
+                    <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" /> Limite máximo do mês atingido!
                     </span>
                   ) : (
-                    <span className="text-emerald-400 flex items-center gap-1">
+                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Orçamento mensal controlado.
                     </span>
                   )

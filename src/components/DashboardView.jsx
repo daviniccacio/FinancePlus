@@ -10,7 +10,7 @@ import BudgetPanel from './BudgetPanel';
 
 gsap.registerPlugin(useGSAP);
 
-// Tooltip com visual moderno e bordas harmonizadas
+// Tooltip com suporte a tema Claro e Escuro
 function UniversalTooltip({ active, payload, label, formatarMoeda, setItemFocado }) {
   useEffect(() => {
     if (setItemFocado) {
@@ -26,16 +26,9 @@ function UniversalTooltip({ active, payload, label, formatarMoeda, setItemFocado
 
   if (label || payload.length > 1) {
     return (
-      <div 
-        style={{
-          backgroundColor: '#161e18',
-          borderColor: '#626868',
-          color: '#FFE2FE'
-        }}
-        className="px-4 py-3 rounded-2xl shadow-2xl border text-xs font-semibold space-y-2 pointer-events-none backdrop-blur-md"
-      >
+      <div className="px-4 py-3 rounded-2xl shadow-2xl border text-xs font-semibold space-y-2 pointer-events-none backdrop-blur-md bg-white/95 dark:bg-[#161e18]/95 border-gray-200 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]">
         {label && (
-          <p style={{ color: '#D3C1D2', borderColor: '#273C2C' }} className="text-[11px] font-bold border-b pb-1.5">
+          <p className="text-[11px] font-bold border-b pb-1.5 text-gray-600 dark:text-[#D3C1D2] border-gray-200 dark:border-[#273C2C]">
             {label}
           </p>
         )}
@@ -49,9 +42,9 @@ function UniversalTooltip({ active, payload, label, formatarMoeda, setItemFocado
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: item.color || corBola }}
                   />
-                  <span style={{ color: '#D3C1D2' }}>{item.name}</span>
+                  <span className="text-gray-600 dark:text-[#D3C1D2]">{item.name}</span>
                 </div>
-                <span className="font-extrabold text-[#FFE2FE]">
+                <span className="font-extrabold text-gray-900 dark:text-[#FFE2FE]">
                   {formatarMoeda(item.value)}
                 </span>
               </div>
@@ -66,20 +59,13 @@ function UniversalTooltip({ active, payload, label, formatarMoeda, setItemFocado
   const corBola = item.color || '#D3C1D2';
 
   return (
-    <div 
-      style={{
-        backgroundColor: '#161e18',
-        borderColor: '#626868',
-        color: '#FFE2FE'
-      }}
-      className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl shadow-2xl border text-xs font-semibold pointer-events-none"
-    >
+    <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl shadow-2xl border text-xs font-semibold pointer-events-none bg-white dark:bg-[#161e18] border-gray-200 dark:border-[#626868] text-gray-900 dark:text-[#FFE2FE]">
       <span
         className="w-2.5 h-2.5 rounded-full shrink-0"
         style={{ backgroundColor: corBola }}
       />
-      <span style={{ color: '#D3C1D2' }}>{item.name}</span>
-      <span className="font-extrabold text-[#FFE2FE] ml-2">{formatarMoeda(item.value)}</span>
+      <span className="text-gray-600 dark:text-[#D3C1D2]">{item.name}</span>
+      <span className="font-extrabold text-gray-900 dark:text-[#FFE2FE] ml-2">{formatarMoeda(item.value)}</span>
     </div>
   );
 }
@@ -166,7 +152,7 @@ export default function DashboardView({
 
   return (
     <div ref={containerRef} className="space-y-6 font-sans">
-      
+
       {/* 1. Cards de Resumo Principais */}
       <div className="gsap-card">
         <SummaryCards
@@ -196,22 +182,15 @@ export default function DashboardView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* GRÁFICO 1: Resumo Geral de Entradas x Saídas */}
-        <div 
-          style={{
-            backgroundColor: '#161e18',
-            borderColor: '#273C2C',
-            color: '#FFE2FE'
-          }}
-          className="gsap-card border p-6 rounded-3xl shadow-lg transition-transform hover:-translate-y-0.5 duration-200"
-        >
+        <div className="gsap-card bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] text-gray-900 dark:text-[#FFE2FE] p-6 rounded-3xl shadow-xs transition-transform hover:-translate-y-0.5 duration-200">
           <div className="text-center mb-2">
-            <p style={{ color: '#D3C1D2' }} className="text-xs font-bold uppercase tracking-wider">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-[#D3C1D2]">
               Entradas x Saídas
             </p>
             <div className="text-2xl font-extrabold mt-1 flex items-center justify-center gap-2">
-              <span className="text-emerald-400">{formatarMoeda(totalEntradas)}</span>
-              <span style={{ color: '#626868' }} className="font-normal text-lg">|</span>
-              <span className="text-rose-400">{formatarMoeda(totalSaidas)}</span>
+              <span className="text-emerald-600 dark:text-emerald-400">{formatarMoeda(totalEntradas)}</span>
+              <span className="font-normal text-lg text-gray-300 dark:text-[#626868]">|</span>
+              <span className="text-rose-600 dark:text-rose-400">{formatarMoeda(totalSaidas)}</span>
             </div>
           </div>
 
@@ -223,6 +202,7 @@ export default function DashboardView({
             colors={['emerald', 'rose']}
             valueFormatter={formatarMoeda}
             showLegend={false}
+            showGridLines={false} /* 👈 Remove as linhas de fundo que distorcem o gráfico */
             yAxisWidth={75}
             barSize={36}
             customTooltip={(props) => (
@@ -235,26 +215,19 @@ export default function DashboardView({
         </div>
 
         {/* GRÁFICO 2: Despesas por Categoria (Donut Interativo) */}
-        <div 
-          style={{
-            backgroundColor: '#161e18',
-            borderColor: '#273C2C',
-            color: '#FFE2FE'
-          }}
-          className="gsap-card border p-6 rounded-3xl shadow-lg transition-transform hover:-translate-y-0.5 duration-200"
-        >
+        <div className="gsap-card bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] text-gray-900 dark:text-[#FFE2FE] p-6 rounded-3xl shadow-xs transition-transform hover:-translate-y-0.5 duration-200">
           <div className="text-center mb-2">
-            <p style={{ color: '#D3C1D2' }} className="text-xs font-bold uppercase tracking-wider">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-[#D3C1D2]">
               {tituloExibidoDespesa}
             </p>
-            <p style={{ color: '#FFE2FE' }} className="text-2xl font-extrabold mt-1 transition-all">
+            <p className="text-2xl font-extrabold mt-1 transition-all text-gray-900 dark:text-[#FFE2FE]">
               {formatarMoeda(valorExibidoDespesa)}
             </p>
           </div>
 
           {despesasPorCategoria.length === 0 ? (
             <Flex className="h-56 items-center justify-center">
-              <span style={{ color: '#939196' }} className="text-xs font-medium">
+              <span className="text-xs font-medium text-gray-400 dark:text-[#939196]">
                 Nenhum gasto registrado neste período.
               </span>
             </Flex>
@@ -283,23 +256,16 @@ export default function DashboardView({
       </div>
 
       {/* 4. LINHA INFERIOR: Evolução do Fluxo de Caixa */}
-      <div 
-        style={{
-          backgroundColor: '#161e18',
-          borderColor: '#273C2C',
-          color: '#FFE2FE'
-        }}
-        className="gsap-card border p-6 rounded-3xl shadow-lg transition-transform hover:-translate-y-0.5 duration-200 w-full"
-      >
+      <div className="gsap-card bg-white dark:bg-[#161e18] border border-gray-200 dark:border-[#273C2C] text-gray-900 dark:text-[#FFE2FE] p-6 rounded-3xl shadow-xs transition-transform hover:-translate-y-0.5 duration-200 w-full">
         <div className="flex items-center justify-between mb-4">
-          <h3 style={{ color: '#D3C1D2' }} className="text-xs font-bold uppercase tracking-wider">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-[#D3C1D2]">
             Evolução do Fluxo de Caixa
           </h3>
           <div className="flex items-center gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-emerald-400">
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Entradas
             </span>
-            <span className="flex items-center gap-1.5 text-rose-400">
+            <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Saídas
             </span>
           </div>
@@ -307,7 +273,7 @@ export default function DashboardView({
 
         {dadosFluxoTempo.length === 0 ? (
           <Flex className="h-64 items-center justify-center">
-            <span style={{ color: '#939196' }} className="text-xs font-medium">
+            <span className="text-xs font-medium text-gray-400 dark:text-[#939196]">
               Sem movimentações para exibir no gráfico.
             </span>
           </Flex>
