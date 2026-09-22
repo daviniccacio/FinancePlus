@@ -25,6 +25,7 @@ import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
 import LandingPage from './components/LandingPage';
 import NotFound from './components/NotFound404';
+import LoadingScreen from './components/common/LoadingScreen';
 
 gsap.registerPlugin(useGSAP);
 
@@ -296,14 +297,7 @@ export default function App() {
 
   // Ecrã de Carregamento da Sessão
   if (carregandoSessao) {
-    return (
-      <div className="min-h-screen flex items-center justify-center font-sans bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#273C2C] dark:border-[#D3C1D2] border-t-transparent dark:border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-semibold text-gray-600 dark:text-[#D3C1D2]">A carregar o FinancePlus...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen mensagem="A preparar o seu painel financeiro..." />;
   }
 
   return (

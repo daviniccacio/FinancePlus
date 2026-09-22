@@ -14,7 +14,7 @@ export default function NotFound({ session }) {
 
   // Se existir uma sessão ativa, o destino principal será o Dashboard.
   // Caso contrário, o destino principal será a página de Login.
-  const destinoInicio = session ? '/dashboard' : '/login';
+  const destinoInicio = session ? '/dashboard' : '/';
 
   return (
     <div className="min-h-screen font-sans bg-[#1b3022] text-white flex flex-col justify-between p-6 selection:bg-[#f7dcf2] selection:text-[#1b3022]">
