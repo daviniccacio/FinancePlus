@@ -24,21 +24,22 @@ import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
 import LandingPage from './components/LandingPage';
+import NotFound from './components/NotFound404';
 
 gsap.registerPlugin(useGSAP);
 
 export default function App() {
   const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const pageRef = useRef(null);
 
   // Define qual a aba ativa na Sidebar com base no caminho da URL
-  const abaAtiva = location.pathname === '/lancamentos' 
-    ? 'lancamentos' 
-    : location.pathname === '/configuracoes' 
-      ? 'configuracoes' 
+  const abaAtiva = location.pathname === '/lancamentos'
+    ? 'lancamentos'
+    : location.pathname === '/configuracoes'
+      ? 'configuracoes'
       : 'dashboard';
 
   const setAbaAtiva = (novaAba) => {
@@ -46,15 +47,15 @@ export default function App() {
     if (novaAba === 'lancamentos') navigate('/lancamentos');
     if (novaAba === 'configuracoes') navigate('/configuracoes');
   };
-  
-  const { 
-    transacoes, 
-    carregando, 
-    buscarTransacoes, 
-    salvarLancamento: salvarLancamentoHook, 
-    excluirTransacao 
+
+  const {
+    transacoes,
+    carregando,
+    buscarTransacoes,
+    salvarLancamento: salvarLancamentoHook,
+    excluirTransacao
   } = useTransactions(session);
-  
+
   const [limites, setLimites] = useState({});
   const [dark, setDark] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('theme') === 'dark';
@@ -148,19 +149,19 @@ export default function App() {
   const [grupoId, setGrupoId] = useState(null);
 
   function limparFormulario() {
-    setEditandoId(null); 
-    setGrupoId(null); 
-    setDescricao(''); 
-    setValorMascara(''); 
+    setEditandoId(null);
+    setGrupoId(null);
+    setDescricao('');
+    setValorMascara('');
     setCategoria('');
-    setData(new Date().toISOString().split('T')[0]); 
-    setTipo('Saída'); 
+    setData(new Date().toISOString().split('T')[0]);
+    setTipo('Saída');
     setStatus('Pago');
-    setDataVencimento(''); 
-    setDadosPagamento(''); 
-    setIsModalAberto(false); 
+    setDataVencimento('');
+    setDadosPagamento('');
+    setIsModalAberto(false);
     setRepetir(false);
-    setTipoRepeticao('fixo'); 
+    setTipoRepeticao('fixo');
     setNumeroParcelas(2);
   }
 
@@ -226,7 +227,7 @@ export default function App() {
         if (new Date(t.data).getUTCFullYear() !== new Date().getFullYear()) return false;
       }
       if (filtroCategoria && t.categoria !== filtroCategoria) return false;
-      
+
       const texto = buscaTexto ? buscaTexto.toLowerCase() : '';
       const bateTexto = !texto || (t.descricao?.toLowerCase().includes(texto)) || (t.categoria?.toLowerCase().includes(texto));
       const bateStatus = !filtroStatus || t.status === filtroStatus;
@@ -310,39 +311,39 @@ export default function App() {
 
       {/* ROTA DE REDEFINIÇÃO DE SENHA */}
       {viewAuth === 'definir' ? (
-        <AuthRecovery 
-          modo="definir" 
-          aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/login'); }} 
-          aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)} 
+        <AuthRecovery
+          modo="definir"
+          aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/login'); }}
+          aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)}
         />
       ) : (
         /* ENVOLTÓRIO DAS ROTAS PRINCIPAIS */
         <div ref={pageRef} className="w-full min-h-screen">
           <Routes>
-            
+
             {/* 🌟 ROTA 1: LANDING PAGE PÚBLICA */}
-            <Route 
-              path="/" 
-              element={<LandingPage />} 
+            <Route
+              path="/"
+              element={<LandingPage />}
             />
 
             {/* 🌟 ROTA 2: TELA DE LOGIN / CADASTRO */}
-            <Route 
-              path="/login" 
+            <Route
+              path="/login"
               element={
-                <LoginScreen 
-                  viewAuth={viewAuth} 
-                  setViewAuth={setViewAuth} 
-                  lidarComLogin={lidarComLoginETransicao} 
-                  lidarComCadastro={cadastro} 
-                  lidarComSolicitacaoEmail={recuperarSenha} 
+                <LoginScreen
+                  viewAuth={viewAuth}
+                  setViewAuth={setViewAuth}
+                  lidarComLogin={lidarComLoginETransicao}
+                  lidarComCadastro={cadastro}
+                  lidarComSolicitacaoEmail={recuperarSenha}
                 />
-              } 
+              }
             />
 
             {/* ROTA 3: PAINEL DE CONTROLE (PROTEGIDO) */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
@@ -363,12 +364,12 @@ export default function App() {
                     </main>
                   </div>
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* ROTA 4: LANÇAMENTOS (PROTEGIDO) */}
-            <Route 
-              path="/lancamentos" 
+            <Route
+              path="/lancamentos"
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
@@ -379,8 +380,8 @@ export default function App() {
                           <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-[#FFE2FE]">Lançamentos</h2>
                           <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Histórico detalhado das transações.</p>
                         </div>
-                        <button 
-                          onClick={() => setIsModalAberto(true)} 
+                        <button
+                          onClick={() => setIsModalAberto(true)}
                           className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer bg-[#273C2C] text-white dark:bg-[#D3C1D2] dark:text-[#273C2C]"
                         >
                           <Plus className="w-4 h-4" /> Novo Lançamento
@@ -398,12 +399,12 @@ export default function App() {
                     </main>
                   </div>
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* ROTA 5: CONFIGURAÇÕES (PROTEGIDO) */}
-            <Route 
-              path="/configuracoes" 
+            <Route
+              path="/configuracoes"
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
@@ -419,11 +420,15 @@ export default function App() {
                     </main>
                   </div>
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="*"
+              element={<NotFound session={session} />}
             />
 
           </Routes>
-          
+
         </div>
       )}
 
@@ -432,7 +437,7 @@ export default function App() {
         <TransactionModal transacoes={transacoes} editandoId={editandoId} limparFormulario={limparFormulario} salvarLancamento={salvarLancamento} data={data} setData={setData} dataVencimento={dataVencimento} setDataVencimento={setDataVencimento} descricao={descricao} setDescricao={setDescricao} dadosPagamento={dadosPagamento} setDadosPagamento={setDadosPagamento} valorMascara={valorMascara} setValorMascara={setValorMascara} category={categoria} setCategoria={setCategoria} tipo={tipo} setTipo={setTipo} status={status} setStatus={setStatus} repetir={repetir} setRepetir={setRepetir} tipoRepeticao={tipoRepeticao} setTipoRepeticao={setTipoRepeticao} numeroParcelas={numeroParcelas} setNumeroParcelas={setNumeroParcelas} />
       )}
       {idExclusaoConfirmar && (
-        <DeleteModal 
+        <DeleteModal
           grupoId={transacoes.find(t => t.id === idExclusaoConfirmar)?.grupo_id}
           setIdExclusaoConfirmar={setIdExclusaoConfirmar}
           ejecutarExclusao={ejecutarExclusao}
