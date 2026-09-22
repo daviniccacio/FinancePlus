@@ -23,6 +23,7 @@ import AuthRecovery from './components/common/AuthRecovery';
 import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/DashboardView';
 import Configuracoes from './components/Config';
+import LandingPage from './components/LandingPage';
 
 gsap.registerPlugin(useGSAP);
 
@@ -33,6 +34,7 @@ export default function App() {
   const location = useLocation();
   const pageRef = useRef(null);
 
+  // Define qual a aba ativa na Sidebar com base no caminho da URL
   const abaAtiva = location.pathname === '/lancamentos' 
     ? 'lancamentos' 
     : location.pathname === '/configuracoes' 
@@ -59,6 +61,7 @@ export default function App() {
     return true;
   });
 
+  // Animação GSAP de entrada de página ao trocar de rota
   useGSAP(() => {
     if (pageRef.current) {
       gsap.fromTo(
@@ -82,7 +85,6 @@ export default function App() {
           ease: 'power2.inOut',
           onComplete: () => {
             navigate('/dashboard');
-            // Dispara a mensagem de boas-vindas exatamente ao chegar ao Dashboard
           },
         });
       } else {
@@ -91,6 +93,7 @@ export default function App() {
     }
   };
 
+  // Efeito para alternar a classe 'dark' no documento HTML
   useEffect(() => {
     if (dark) {
       document.documentElement.classList.add('dark');
@@ -101,11 +104,13 @@ export default function App() {
     }
   }, [dark]);
 
+  // 🌟 REDIRECIONAMENTO DE SESSÃO ATIVA
+  // Se o utilizador já estiver autenticado e aceder à Landing Page (/) ou Login (/login), é enviado para o Dashboard
   useEffect(() => {
     const gerenciarSessao = async () => {
       if (session?.user?.id) {
         await buscarTransacoes();
-        if (location.pathname === '/') {
+        if (location.pathname === '/' || location.pathname === '/login') {
           navigate('/dashboard', { replace: true });
         }
       }
@@ -113,6 +118,7 @@ export default function App() {
     gerenciarSessao();
   }, [session, buscarTransacoes, location.pathname, navigate]);
 
+  // Estados dos Filtros e Paginação
   const [buscaTexto, setBuscaTexto] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -124,6 +130,7 @@ export default function App() {
   });
   const [filtroPeriodo, setFiltroPeriodo] = useState('mensal');
 
+  // Estados dos Modais e Formulários de Transação
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
   const [idExclusaoConfirmar, setIdExclusaoConfirmar] = useState(null);
@@ -286,6 +293,7 @@ export default function App() {
     toast.success('PDF exportado com sucesso!');
   }
 
+  // Ecrã de Carregamento da Sessão
   if (carregandoSessao) {
     return (
       <div className="min-h-screen flex items-center justify-center font-sans bg-gray-100 dark:bg-[#1a281e] text-gray-900 dark:text-[#FFE2FE]">
@@ -304,15 +312,23 @@ export default function App() {
       {viewAuth === 'definir' ? (
         <AuthRecovery 
           modo="definir" 
-          aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/'); }} 
+          aoVoltar={async () => { await logout(); setViewAuth('login'); navigate('/login'); }} 
           aoSubmeter={(dados, setCarregando) => definirNovaSenha(dados, session?.user?.email, setCarregando)} 
         />
       ) : (
         /* ENVOLTÓRIO DAS ROTAS PRINCIPAIS */
         <div ref={pageRef} className="w-full min-h-screen">
           <Routes>
+            
+            {/* 🌟 ROTA 1: LANDING PAGE PÚBLICA */}
             <Route 
               path="/" 
+              element={<LandingPage />} 
+            />
+
+            {/* 🌟 ROTA 2: TELA DE LOGIN / CADASTRO */}
+            <Route 
+              path="/login" 
               element={
                 <LoginScreen 
                   viewAuth={viewAuth} 
@@ -324,12 +340,13 @@ export default function App() {
               } 
             />
 
+            {/* ROTA 3: PAINEL DE CONTROLE (PROTEGIDO) */}
             <Route 
               path="/dashboard" 
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
-                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/login'); }} dark={dark} setDark={setDark} />
                     <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                       <div className="flex justify-between items-center min-h-12">
                         <div>
@@ -349,12 +366,13 @@ export default function App() {
               } 
             />
 
+            {/* ROTA 4: LANÇAMENTOS (PROTEGIDO) */}
             <Route 
               path="/lancamentos" 
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
-                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/login'); }} dark={dark} setDark={setDark} />
                     <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                       <div className="flex justify-between items-center min-h-12">
                         <div>
@@ -383,12 +401,13 @@ export default function App() {
               } 
             />
 
+            {/* ROTA 5: CONFIGURAÇÕES (PROTEGIDO) */}
             <Route 
               path="/configuracoes" 
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
-                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/'); }} dark={dark} setDark={setDark} />
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/login'); }} dark={dark} setDark={setDark} />
                     <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                       <div className="flex justify-between items-center min-h-12">
                         <div>
@@ -396,16 +415,18 @@ export default function App() {
                           <p className="text-xs font-medium text-gray-600 dark:text-[#D3C1D2]">Gerencie preferências e segurança.</p>
                         </div>
                       </div>
-                      <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/'); }} />
+                      <Configuracoes session={session} onLogout={async () => { await logout(); navigate('/login'); }} />
                     </main>
                   </div>
                 </ProtectedRoute>
               } 
             />
+
           </Routes>
         </div>
       )}
 
+      {/* Modais Flutuantes de Transação e Exclusão */}
       {isModalAberto && (
         <TransactionModal transacoes={transacoes} editandoId={editandoId} limparFormulario={limparFormulario} salvarLancamento={salvarLancamento} data={data} setData={setData} dataVencimento={dataVencimento} setDataVencimento={setDataVencimento} descricao={descricao} setDescricao={setDescricao} dadosPagamento={dadosPagamento} setDadosPagamento={setDadosPagamento} valorMascara={valorMascara} setValorMascara={setValorMascara} category={categoria} setCategoria={setCategoria} tipo={tipo} setTipo={setTipo} status={status} setStatus={setStatus} repetir={repetir} setRepetir={setRepetir} tipoRepeticao={tipoRepeticao} setTipoRepeticao={setTipoRepeticao} numeroParcelas={numeroParcelas} setNumeroParcelas={setNumeroParcelas} />
       )}
