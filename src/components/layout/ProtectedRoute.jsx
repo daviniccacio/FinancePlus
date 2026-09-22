@@ -1,12 +1,15 @@
-// src/components/ProtectedRoute.jsx
+// src/components/layout/ProtectedRoute.jsx
 import { Navigate } from 'react-router-dom';
 
+/**
+ * Componente de Proteção de Rotas.
+ * Verifica se existe uma sessão ativa. Se não existir, redireciona para a tela de login.
+ */
 export default function ProtectedRoute({ session, children }) {
-  // Se não existir sessão ativa, redireciona o utilizador para a raiz (login)
+  // 🌟 Se não houver utilizador autenticado, envia DIRETO para /login (e não para '/')
   if (!session) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Se estiver logado, renderiza a página protegida solicitada
   return children;
 }

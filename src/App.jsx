@@ -346,7 +346,7 @@ export default function App() {
               element={
                 <ProtectedRoute session={session}>
                   <div className="flex w-full min-h-screen">
-                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/login'); }} dark={dark} setDark={setDark} />
+                    <Sidebar abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} lidarComLogout={async () => { await logout(); navigate('/login', { replace: true }); }} dark={dark} setDark={setDark} />
                     <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
                       <div className="flex justify-between items-center min-h-12">
                         <div>
@@ -423,6 +423,7 @@ export default function App() {
             />
 
           </Routes>
+          
         </div>
       )}
 
