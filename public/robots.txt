@@ -1,0 +1,15 @@
+# --------------------------------------------------
+# CONFIGURAÇÃO DE MOTORES DE BUSCA - FINANCEPLUS
+# --------------------------------------------------
+
+# 1. Regra para todos os robôs e motores de busca
+User-agent: *
+
+# 2. Permitir a leitura de páginas públicas
+Allow: /
+Allow: /login
+
+# 3. Bloquear a leitura de páginas privadas da aplicação
+Disallow: /dashboard
+Disallow: /lancamentos
+Disallow: /configuracoes
