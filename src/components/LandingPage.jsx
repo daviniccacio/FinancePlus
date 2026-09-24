@@ -9,8 +9,10 @@ import {
   Sparkles
 } from 'lucide-react';
 
+import KashioIcon from './common/KashioIcon';
+
 /**
- * Landing Page Oficial do FinancePlus
+ * Landing Page Oficial do Kashio
  * Inclui a nova Hero Section topo com Mockup e todas as secções informativas.
  */
 export default function LandingPage() {
@@ -21,11 +23,8 @@ export default function LandingPage() {
       
       {/* 🌟 CABEÇALHO / NAVBAR (Integrado no Fundo Escuro) */}
       <header className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-9 h-9 rounded-xl bg-[#f7dcf2] flex items-center justify-center text-[#1b3022] font-black text-sm">
-            F+
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white">FinancePlus</span>
+        <div className="flex p-1.5 items-center gap-2.5 rounded-lg cursor-pointer" onClick={() => navigate('/')}>
+          <img src="/kashiologobranco.png" alt="Kashio Logo" className="w-16 h-16" />
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-[#f7dcf2]/80">
@@ -63,7 +62,7 @@ export default function LandingPage() {
 
           {/* Subtítulo */}
           <p className="text-sm md:text-base text-gray-300 font-medium leading-relaxed max-w-md">
-            FinancePlus reúne painel, lançamentos e metas em um só lugar. Menos planilha, mais clareza.
+            Kashio reúne painel, lançamentos e metas em um só lugar. Menos planilha, mais clareza.
           </p>
 
           {/* Botões de Ação */}
@@ -451,7 +450,7 @@ export default function LandingPage() {
               Sua rotina, mais clara
             </span>
             <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
-              Acesse o FinancePlus.
+              Acesse o Kashio.
             </h2>
             <p className="text-xs md:text-sm text-[#f7dcf2]/90 max-w-lg font-medium leading-relaxed">
               Abra o sistema e acompanhe seu painel, seus lançamentos e suas metas em um só lugar.
@@ -471,10 +470,8 @@ export default function LandingPage() {
         {/* RODAPÉ */}
         <footer className="max-w-7xl mx-auto px-6 py-8 border-t border-gray-200/60 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-semibold text-gray-500">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-[#1b3022] flex items-center justify-center text-[#f7dcf2] font-black text-[10px]">
-              F+
-            </div>
-            <span className="font-bold text-[#1b3022]">FinancePlus</span>
+            <img src="/kashiologo.png" alt="Kashio Logo" className="w-12 h-12" />
+            <span className="font-bold text-lg text-[#1b3022]">Kashio</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -483,7 +480,7 @@ export default function LandingPage() {
             <a href="#beneficios" className="hover:text-[#1b3022] transition-colors">Benefícios</a>
           </div>
 
-          <p>FinancePlus © 2026</p>
+          <p>Kashio © 2026</p>
         </footer>
 
       </div>

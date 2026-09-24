@@ -4,6 +4,7 @@ import { Wallet, Eye, EyeOff, ShieldCheck, Loader2, Sun, Moon } from 'lucide-rea
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import AuthRecovery from './AuthRecovery';
+import { useRateLimit } from '../../hooks/useRateLimit'; // 🌟 Importação do Hook de Segurança
 
 // Registro obrigatório do plugin GSAP
 gsap.registerPlugin(useGSAP);
@@ -22,6 +23,9 @@ export default function LoginScreen({
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
+
+  // 🌟 Integração do Rate Limit com 3000ms (3 segundos) de bloqueio entre cliques
+  const { executarComLimite, bloqueado } = useRateLimit(3000);
 
   // Estado do Modo Claro / Modo Escuro (Padrão: Dark Mode)
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -199,27 +203,31 @@ export default function LoginScreen({
     mouseRef.current = { x: null, y: null };
   };
 
+  // 🌟 LÓGICA DE SUBMISSÃO PROTEGIDA COM RATE LIMITING
   const submeterFormulario = async (e) => {
     e.preventDefault();
-    if (carregando) return;
+    if (carregando || bloqueado) return;
 
-    setCarregando(true);
+    // Executa a lógica apenas se passar pelo limite de requisições
+    executarComLimite(async () => {
+      setCarregando(true);
 
-    gsap.fromTo(
-      progressFillRef.current,
-      { width: '0%' },
-      { width: '100%', duration: 1.5, ease: 'power1.inOut' }
-    );
+      gsap.fromTo(
+        progressFillRef.current,
+        { width: '0%' },
+        { width: '100%', duration: 1.5, ease: 'power1.inOut' }
+      );
 
-    setTimeout(() => {
-      if (viewAuth === 'login') {
-        lidarComLogin(email, password);
-      } else {
-        lidarComCadastro(email, password, nome, confirmarSenha);
-      }
-      setCarregando(false);
-      gsap.set(progressFillRef.current, { width: '0%' });
-    }, 1500);
+      setTimeout(() => {
+        if (viewAuth === 'login') {
+          lidarComLogin(email, password);
+        } else {
+          lidarComCadastro(email, password, nome, confirmarSenha);
+        }
+        setCarregando(false);
+        gsap.set(progressFillRef.current, { width: '0%' });
+      }, 1500);
+    });
   };
 
   const alternarMostrarSenha = () => {
@@ -460,15 +468,15 @@ export default function LoginScreen({
                 </div>
               )}
 
-              {/* Botão de Envio */}
+              {/* 🌟 Botão de Envio Desativado quando estiver em 'carregando' OU 'bloqueado' */}
               <button
                 type="submit"
-                disabled={carregando}
+                disabled={carregando || bloqueado}
                 style={{
                   backgroundColor: isDarkMode ? '#D3C1D2' : '#273C2C',
                   color: isDarkMode ? '#273C2C' : '#FFE2FE'
                 }}
-                className="relative w-full font-bold py-2.5 rounded-xl text-xs transition-all shadow-md active:scale-[0.98] mt-2 cursor-pointer overflow-hidden disabled:cursor-not-allowed"
+                className="relative w-full font-bold py-2.5 rounded-xl text-xs transition-all shadow-md active:scale-[0.98] mt-2 cursor-pointer overflow-hidden disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div
                   ref={progressFillRef}
@@ -484,6 +492,8 @@ export default function LoginScreen({
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Processando...</span>
                     </>
+                  ) : bloqueado ? (
+                    <span>Aguarde um momento...</span>
                   ) : (
                     viewAuth === 'login' ? 'Entrar no Sistema' : 'Criar minha Conta'
                   )}
