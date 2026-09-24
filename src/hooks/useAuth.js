@@ -7,6 +7,9 @@ import { notify } from "../utils/notify";
 export function useAuth() {
   const [session, setSession] = useState(null);
   const [carregandoSessao, setCarregandoSessao] = useState(true);
+  
+  // 🌟 Estado para controlar a exibição da LoadingScreen durante o login
+  const [carregandoLogin, setCarregandoLogin] = useState(false);
 
   const [viewAuth, setViewAuth] = useState(() => {
     if (
@@ -43,16 +46,34 @@ export function useAuth() {
       notify.error(validacao.mensagem);
       return false;
     }
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      notify.error(traduzirErroSupabase(error));
+
+    // 🚀 Ativa a LoadingScreen imediatamente ao clicar em entrar
+    setCarregandoLogin(true);
+
+    // Timer fixo de 5 segundos para a LoadingScreen
+    const delayCincoSegundos = new Promise((resolve) => setTimeout(resolve, 2000));
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setCarregandoLogin(false);
+        notify.error(traduzirErroSupabase(error));
+        return false;
+      }
+
+      // Aguarda completar os 5 segundos antes de liberar a tela principal
+      await delayCincoSegundos;
+      return true;
+    } catch (err) {
+      notify.error("Erro inesperado ao realizar login.");
       return false;
+    } finally {
+      setCarregandoLogin(false);
     }
-    // Sucesso na autenticação: a mensagem será disparada apenas ao chegar ao Dashboard
-    return true;
   };
 
   const cadastro = async (email, password, nome, confirmarSenha) => {
@@ -160,6 +181,7 @@ export function useAuth() {
   return {
     session,
     carregandoSessao,
+    carregandoLogin, // 👈 Exportado para uso no App.jsx
     viewAuth,
     setViewAuth,
     login,

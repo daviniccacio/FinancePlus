@@ -9,7 +9,6 @@ import {
   Sparkles
 } from 'lucide-react';
 
-import KashioIcon from './common/KashioIcon';
 
 /**
  * Landing Page Oficial do Kashio

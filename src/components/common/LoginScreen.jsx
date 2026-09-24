@@ -1,6 +1,6 @@
 // src/components/common/LoginScreen.jsx
 import { useState, useRef, useEffect } from 'react';
-import { Wallet, Eye, EyeOff, ShieldCheck, Loader2, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Loader2, Sun, Moon } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import AuthRecovery from './AuthRecovery';
@@ -204,29 +204,39 @@ export default function LoginScreen({
   };
 
   // 🌟 LÓGICA DE SUBMISSÃO PROTEGIDA COM RATE LIMITING
+  // 🌟 LÓGICA DE SUBMISSÃO COM CARREGAMENTO MÍNIMO DE 5 SEGUNDOS
   const submeterFormulario = async (e) => {
     e.preventDefault();
     if (carregando || bloqueado) return;
 
-    // Executa a lógica apenas se passar pelo limite de requisições
     executarComLimite(async () => {
       setCarregando(true);
 
+      // 1. Inicia a animação da barra de progresso para preencher em 5 segundos
       gsap.fromTo(
         progressFillRef.current,
         { width: '0%' },
-        { width: '100%', duration: 1.5, ease: 'power1.inOut' }
+        { width: '100%', duration: 5, ease: 'power1.inOut' }
       );
 
-      setTimeout(() => {
+      // 2. Timer de 5000ms para garantir a visibilidade da tela/estado de loading
+      const tempoMinimoLoading = new Promise((resolve) => setTimeout(resolve, 5000));
+
+      try {
         if (viewAuth === 'login') {
-          lidarComLogin(email, password);
+          // Aguarda a resposta da API do Supabase e o tempo mínimo de 5s
+          await Promise.all([lidarComLogin(email, password), tempoMinimoLoading]);
         } else {
-          lidarComCadastro(email, password, nome, confirmarSenha);
+          await Promise.all([
+            lidarComCadastro(email, password, nome, confirmarSenha),
+            tempoMinimoLoading
+          ]);
         }
+      } finally {
+        // 3. Reseta os estados de animação e botão após os 5 segundos
         setCarregando(false);
         gsap.set(progressFillRef.current, { width: '0%' });
-      }, 1500);
+      }
     });
   };
 
@@ -308,11 +318,10 @@ export default function LoginScreen({
               style={{
                 backgroundColor: isDarkMode ? 'rgba(255, 226, 254, 0.15)' : 'rgba(39, 60, 44, 0.15)'
               }}
-              className="p-2.5 rounded-xl border border-current/20 backdrop-blur-xs"
+              className=" rounded-xl border border-current/20 backdrop-blur-xs"
             >
-              <Wallet className="w-5 h-5" />
+              <img src={isDarkMode ? "/kashiologobranco.png" : "/kashiologo.png"} alt="Logo Kashio" className="w-14 h-14" />
             </div>
-            <span className="text-sm font-bold tracking-wider uppercase">Gestor Financeiro</span>
           </div>
 
           <div className="space-y-3 relative z-10 my-auto">

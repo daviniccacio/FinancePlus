@@ -26,10 +26,8 @@ export default function NotFound({ session }) {
           onClick={() => navigate(destinoInicio)}
         >
           {/* Caixa do Ícone F+ */}
-          <div className="w-9 h-9 rounded-xl bg-[#f7dcf2] flex items-center justify-center text-[#1b3022] font-black text-sm shadow-md">
-            F+
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white">FinancePlus</span>
+          <img src="/kashiologobranco.png" alt="Logo Kashio" className="w-10 h-10 rounded-lg" />
+          <span className="text-lg font-bold tracking-tight text-white">Kashio</span>
         </div>
       </header>
 

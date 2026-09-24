@@ -9,23 +9,23 @@ export default function Sidebar({ abaAtiva, setAbaAtiva, lidarComLogout, dark, s
   ];
 
   return (
-    <aside className="w-64 bg-white dark:bg-[#161e18] border-r border-gray-200 dark:border-[#273C2C] h-screen sticky top-0 flex flex-col justify-between p-5 select-none hidden md:flex transition-colors duration-200 font-sans">
+    <aside className="w-64 bg-white dark:bg-[#161e18] border-r border-gray-200 dark:border-[#273C2C] h-screen sticky top-0 flex flex-col justify-between p-5 select-none md:flex transition-colors duration-200 font-sans">
       <div>
         {/* CABEÇALHO */}
         <div className="flex items-center gap-2.5 px-2 mb-8">
           <div className="p-1 bg-transparent rounded-lg flex items-center justify-center overflow-hidden">
             <img 
-              src="/favicon.png" 
+              src={dark ? "/kashiologobranco.png" : "/kashiologo.png"} 
               alt="Logo Gestor Financeiro" 
               className="w-12 h-12 object-contain rounded-2xl" 
             />
           </div>
           <div>
             <h1 className="text-sm font-bold leading-none text-gray-900 dark:text-[#FFE2FE]">
-              FinancePlus
+              Kashio
             </h1>
             <span className="text-[10px] font-medium text-gray-500 dark:text-[#939196]">
-              Sistema de gestão financeira
+              Gestão Financeira Pessoal
             </span>
           </div>
         </div>

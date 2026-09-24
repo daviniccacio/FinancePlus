@@ -10,7 +10,6 @@ import { useGSAP } from '@gsap/react';
 
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
-import { notify } from './utils/notify';
 import LoginScreen from './components/common/LoginScreen';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
@@ -30,7 +29,7 @@ import LoadingScreen from './components/common/LoadingScreen';
 gsap.registerPlugin(useGSAP);
 
 export default function App() {
-  const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout } = useAuth();
+  const { session, carregandoSessao, viewAuth, setViewAuth, login, cadastro, recuperarSenha, definirNovaSenha, logout, carregandoLogin } = useAuth();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -296,7 +295,7 @@ export default function App() {
   }
 
   // Ecrã de Carregamento da Sessão
-  if (carregandoSessao) {
+  if (carregandoSessao || carregandoLogin) {
     return <LoadingScreen mensagem="A preparar o seu painel financeiro..." />;
   }
 

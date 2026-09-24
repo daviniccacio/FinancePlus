@@ -7,7 +7,7 @@
  * @param {Object} props - Propriedades do componente
  * @param {string} [props.mensagem="A carregar o FinancePlus..."] - Texto exibido abaixo da animação
  */
-export default function LoadingScreen({ mensagem = 'A carregar o FinancePlus...' }) {
+export default function LoadingScreen({ mensagem = 'A carregar o Kashio...' }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#1b3022] text-white select-none overflow-hidden font-sans">
       
@@ -23,15 +23,12 @@ export default function LoadingScreen({ mensagem = 'A carregar o FinancePlus...'
           <div className="absolute w-24 h-24 rounded-3xl bg-[#f7dcf2]/10 animate-pulse duration-700" />
 
           {/* Caixa da Logo F+ */}
-          <div className="relative w-16 h-16 rounded-2xl bg-[#f7dcf2] text-[#1b3022] font-black text-2xl flex items-center justify-center shadow-2xl transition-transform hover:scale-105">
-            F+
-          </div>
+          <img src="/kashiologobranco.png" alt="Logo Kashio" className="w-16 h-16 rounded-lg z-10" />
         </div>
 
         {/* Nome da Aplicação */}
         <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-white pt-2">
-          <span>Finance</span>
-          <span className="text-[#f7dcf2]">Plus</span>
+          <span>Kashio</span>
         </div>
 
         {/* 🌟 3. BARRA DE PROGRESSO & MENSAGEM */}
